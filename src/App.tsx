@@ -42,7 +42,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   
-  const [selectedAccountId, setSelectedAccountId] = useState<number>(1);
+  const [selectedAccountId, setSelectedAccountId] = useState<number>(0);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -53,6 +53,29 @@ export default function App() {
     amount: "",
     description: ""
   });
+
+  const BankLogo = ({ url, name, className = "w-10 h-10" }: { url?: string, name: string, className?: string }) => {
+    const [error, setError] = useState(false);
+    const firstLetter = name.charAt(0).toUpperCase();
+
+    if (!url || error) {
+      return (
+        <div className={`${className} bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold rounded-xl border border-emerald-500/20`}>
+          {firstLetter}
+        </div>
+      );
+    }
+
+    return (
+      <img 
+        src={url} 
+        alt={name} 
+        className={`${className} object-contain bg-white p-1 rounded-xl border border-border`}
+        referrerPolicy="no-referrer"
+        onError={() => setError(true)}
+      />
+    );
+  };
 
   const fetchData = async () => {
     try {
@@ -211,8 +234,8 @@ export default function App() {
     in_hand_expenses: 0
   };
 
-  const totalCredits = summary.digital_credits + summary.in_hand_credits;
-  const totalExpenses = summary.digital_expenses + summary.in_hand_expenses;
+  const totalCredits = (Number(summary.digital_credits) || 0) + (Number(summary.in_hand_credits) || 0);
+  const totalExpenses = (Number(summary.digital_expenses) || 0) + (Number(summary.in_hand_expenses) || 0);
   const totalBalance = totalCredits - totalExpenses;
 
   return (
@@ -386,23 +409,22 @@ export default function App() {
                 <section className="relative overflow-hidden">
                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
                   <div className="relative">
-                    <p className="font-display italic text-6xl lg:text-8xl text-foreground leading-none mb-6 tracking-tighter">
+                    <p className="font-display italic text-5xl md:text-6xl lg:text-8xl text-foreground leading-none mb-6 tracking-tighter">
                       Financial <br /> 
                       <span className="text-emerald-500">Intelligence.</span>
                     </p>
-                    <div className="flex flex-wrap gap-12 mt-12">
+                    <div className="flex flex-wrap gap-8 md:gap-12 mt-12">
                       <div className="space-y-1 flex items-center gap-4">
-                        {selectedAccountId !== 0 && accountBalances.find(a => a.id === selectedAccountId)?.logo_url && (
-                          <img 
-                            src={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
-                            alt="Account Logo" 
-                            className="w-12 h-12 object-contain bg-white p-2 rounded-2xl border border-border"
-                            referrerPolicy="no-referrer"
+                        {selectedAccountId !== 0 && accountBalances.find(a => a.id === selectedAccountId) && (
+                          <BankLogo 
+                            url={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
+                            name={accountBalances.find(a => a.id === selectedAccountId)?.name || ""} 
+                            className="w-12 h-12 md:w-16 md:h-16"
                           />
                         )}
                         <div>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
-                          <p className="text-4xl font-bold tracking-tighter">₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                          <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                         </div>
                       </div>
                       <div className="w-px h-12 bg-border hidden sm:block" />
@@ -487,14 +509,14 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-12"
+                className="space-y-8 md:space-y-12"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-4xl font-bold tracking-tighter">My Banks & Wallets</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">My Banks & Wallets</h2>
                     <p className="text-sm text-muted-foreground mt-1">See how much money you have in each bank or wallet.</p>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <button 
                       onClick={() => fetchData()}
                       className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium"
@@ -509,34 +531,43 @@ export default function App() {
                       <ArrowRightLeft className="w-4 h-4" />
                       Transfer
                     </button>
-                    {showAddAccount && (
-                      <div className="flex gap-2 bg-muted p-1 rounded-xl border border-border animate-in slide-in-from-right-4">
-                        <select 
-                          autoFocus
-                          onChange={(e) => {
-                            const bank = INDIAN_BANKS.find(b => b.name === e.target.value);
-                            if (bank) {
-                              handleAddAccount(bank.name, bank.logo);
-                              setShowAddAccount(false);
-                            }
-                          }}
-                          className="bg-transparent border-none outline-none px-3 py-2 text-sm w-48"
-                        >
-                          <option value="">Select Indian Bank...</option>
-                          {INDIAN_BANKS.map(bank => (
-                            <option key={bank.name} value={bank.name}>{bank.name}</option>
-                          ))}
-                        </select>
-                        <button 
-                          onClick={() => setShowAddAccount(false)}
-                          className="p-2 text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
+
+                {showAddAccount && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-col md:flex-row gap-4 bg-card p-6 rounded-3xl border border-border shadow-xl"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Select Bank</label>
+                      <select 
+                        autoFocus
+                        onChange={(e) => {
+                          const bank = INDIAN_BANKS.find(b => b.name === e.target.value);
+                          if (bank) {
+                            handleAddAccount(bank.name, bank.logo);
+                            setShowAddAccount(false);
+                          }
+                        }}
+                        className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                      >
+                        <option value="">Select Indian Bank...</option>
+                        {INDIAN_BANKS.map(bank => (
+                          <option key={bank.name} value={bank.name} className="bg-card">{bank.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button 
+                      onClick={() => setShowAddAccount(false)}
+                      className="self-end p-3 text-muted-foreground hover:text-foreground bg-muted rounded-xl border border-border"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </motion.div>
+                )}
 
                 {/* Bank Insights Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -622,17 +653,8 @@ export default function App() {
                       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
                       
                       <div className="flex justify-between items-start mb-8 relative">
-                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500 overflow-hidden">
-                          {acc.logo_url ? (
-                            <img 
-                              src={acc.logo_url} 
-                              alt={acc.name} 
-                              className="w-10 h-10 object-contain bg-white p-1 rounded-lg"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <CreditCard className="w-7 h-7" />
-                          )}
+                        <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+                          <BankLogo url={acc.logo_url} name={acc.name} className="w-14 h-14" />
                         </div>
                         <div className="flex flex-col items-end gap-2">
                           <div className="text-right">
@@ -945,11 +967,11 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] shadow-2xl overflow-hidden p-8"
+              className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-bold tracking-tighter">Transfer Money</h3>
-                <button onClick={() => setShowTransfer(false)} className="p-2 hover:bg-muted rounded-full transition-colors">
+                <h3 className="text-xl md:text-2xl font-bold tracking-tighter text-foreground">Transfer Money</h3>
+                <button onClick={() => setShowTransfer(false)} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -960,11 +982,11 @@ export default function App() {
                   <select 
                     value={transferData.from}
                     onChange={(e) => setTransferData({ ...transferData, from: e.target.value })}
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   >
-                    <option value="">Select Source...</option>
+                    <option value="" className="bg-card">Select Source...</option>
                     {accountBalances.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                      <option key={acc.id} value={acc.id} className="bg-card">{acc.name} (₹{acc.balance.toLocaleString()})</option>
                     ))}
                   </select>
                 </div>
@@ -980,11 +1002,11 @@ export default function App() {
                   <select 
                     value={transferData.to}
                     onChange={(e) => setTransferData({ ...transferData, to: e.target.value })}
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   >
-                    <option value="">Select Destination...</option>
+                    <option value="" className="bg-card">Select Destination...</option>
                     {accountBalances.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                      <option key={acc.id} value={acc.id} className="bg-card">{acc.name} (₹{acc.balance.toLocaleString()})</option>
                     ))}
                   </select>
                 </div>
@@ -998,7 +1020,7 @@ export default function App() {
                       placeholder="0.00"
                       value={transferData.amount}
                       onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
-                      className="w-full bg-muted border border-border rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                      className="w-full bg-muted/50 border border-border rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors font-mono text-foreground"
                     />
                   </div>
                 </div>
@@ -1010,7 +1032,7 @@ export default function App() {
                     placeholder="What's this for?"
                     value={transferData.description}
                     onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   />
                 </div>
 

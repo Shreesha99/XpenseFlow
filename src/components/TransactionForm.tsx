@@ -91,10 +91,10 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8" id="transaction-form">
+    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8" id="transaction-form">
       <div className="space-y-1">
-        <h2 className="text-3xl font-bold tracking-tighter text-foreground">New Entry</h2>
-        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Record your financial movement</p>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">New Entry</h2>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Record your financial movement</p>
       </div>
 
       <AnimatePresence>
@@ -103,7 +103,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-destructive/10 border border-destructive/20 p-3 rounded-xl flex items-center gap-3 text-destructive text-xs font-bold"
+            className="bg-destructive/10 border border-destructive/20 p-3 rounded-xl flex items-center gap-3 text-destructive text-[10px] font-bold"
           >
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
@@ -111,7 +111,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
         )}
       </AnimatePresence>
       
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-3">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Transaction Type</label>
           <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl border border-border">
@@ -157,7 +157,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
         <div className="space-y-3">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Title / Payee</label>
           <input

@@ -17,12 +17,6 @@ db.exec(`
     logo_url TEXT
   );
 
-  try {
-    db.prepare("ALTER TABLE accounts ADD COLUMN logo_url TEXT").run();
-  } catch (e) {
-    // Column already exists
-  }
-
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -45,6 +39,12 @@ db.exec(`
   INSERT OR IGNORE INTO accounts (name) VALUES ('Main Bank');
   INSERT OR IGNORE INTO categories (name) VALUES ('Salary'), ('Food'), ('Rent'), ('Utilities'), ('Entertainment'), ('Transport'), ('Shopping'), ('Health'), ('Subscriptions'), ('Other');
 `);
+
+try {
+  db.prepare("ALTER TABLE accounts ADD COLUMN logo_url TEXT").run();
+} catch (e) {
+  // Column already exists
+}
 
 async function startServer() {
   const app = express();
