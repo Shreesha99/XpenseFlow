@@ -185,7 +185,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
           </div>
         </div>
         <div className="space-y-3">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Taxonomy</label>
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Category</label>
           <div className="relative">
             <select
               value={formData.category}

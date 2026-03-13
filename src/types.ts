@@ -6,6 +6,8 @@ export interface Transaction {
   mode: 'digital' | 'in_hand';
   category: string;
   account_id: number;
+  account_name?: string;
+  account_logo_url?: string;
   date: string;
   description?: string;
   created_at: string;
@@ -14,6 +16,8 @@ export interface Transaction {
 export interface Account {
   id: number;
   name: string;
+  balance?: number;
+  logo_url?: string;
 }
 
 export interface Category {

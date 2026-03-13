@@ -24,19 +24,19 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
       {!compact && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Total Credits</p>
+            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Total Income</p>
             <p className="text-2xl font-bold text-foreground">
               ₹{((summary.digital_credits || 0) + (summary.in_hand_credits || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-xl">
-            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1">Total Expenses</p>
+            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1">Total Outflow</p>
             <p className="text-2xl font-bold text-foreground">
               ₹{((summary.digital_expenses || 0) + (summary.in_hand_expenses || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Net Balance</p>
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Current Balance</p>
             <p className="text-2xl font-bold text-foreground">
               ₹{(totalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
@@ -53,6 +53,7 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
               <th className="p-5 text-right font-bold">Amount</th>
               <th className="p-5 text-left font-bold">Expenses</th>
               <th className="p-5 text-right font-bold">Amount</th>
+              <th className="p-5 text-left font-bold">Bank</th>
               <th className="p-5 text-left font-bold">Category</th>
               <th className="p-5 text-center font-bold w-10"></th>
             </tr>
@@ -90,6 +91,21 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
                   {t.type === 'expense' ? `₹${(t.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''}
                 </td>
                 <td className="p-5">
+                  <div className="flex items-center gap-2">
+                    {t.account_logo_url && (
+                      <img 
+                        src={t.account_logo_url} 
+                        alt={t.account_name} 
+                        className="w-4 h-4 rounded-full object-contain bg-white p-0.5 border border-border"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      {t.account_name || 'Main'}
+                    </span>
+                  </div>
+                </td>
+                <td className="p-5">
                   <span className="px-3 py-1 rounded-full bg-muted border border-border text-[9px] font-bold text-muted-foreground uppercase tracking-widest group-hover:border-emerald-500/20 transition-colors">
                     {t.category}
                   </span>
@@ -106,7 +122,7 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-12 text-center">
+                <td colSpan={8} className="p-12 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <History className="w-8 h-8 opacity-20" />
                     <p className="text-sm italic">No transactions recorded yet.</p>

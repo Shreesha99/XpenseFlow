@@ -13,8 +13,15 @@ const db = new Database("expenses.db");
 db.exec(`
   CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    logo_url TEXT
   );
+
+  try {
+    db.prepare("ALTER TABLE accounts ADD COLUMN logo_url TEXT").run();
+  } catch (e) {
+    // Column already exists
+  }
 
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,12 +63,25 @@ async function startServer() {
   });
 
   app.post("/api/accounts", (req, res) => {
-    const { name } = req.body;
+    const { name, logo_url } = req.body;
     try {
-      const info = db.prepare("INSERT INTO accounts (name) VALUES (?)").run(name);
+      const info = db.prepare("INSERT INTO accounts (name, logo_url) VALUES (?, ?)").run(name, logo_url);
       res.json({ id: info.lastInsertRowid });
     } catch (error) {
       res.status(500).json({ error: "Failed to add account" });
+    }
+  });
+
+  app.delete("/api/accounts/:id", (req, res) => {
+    const { id } = req.params;
+    try {
+      // Delete transactions associated with the account
+      db.prepare("DELETE FROM transactions WHERE account_id = ?").run(id);
+      // Delete the account
+      db.prepare("DELETE FROM accounts WHERE id = ?").run(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete account" });
     }
   });
 
@@ -100,11 +120,16 @@ async function startServer() {
   app.get("/api/transactions", (req, res) => {
     const { account_id, month } = req.query;
     try {
-      let query = "SELECT * FROM transactions WHERE 1=1";
+      let query = `
+        SELECT t.*, a.name as account_name, a.logo_url as account_logo_url
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id
+        WHERE 1=1
+      `;
       const params: any[] = [];
 
-      if (account_id) {
-        query += " AND account_id = ?";
+      if (account_id && account_id !== '0') {
+        query += " AND t.account_id = ?";
         params.push(account_id);
       }
 
@@ -181,7 +206,7 @@ async function startServer() {
       let whereClause = "WHERE 1=1";
       const params: any[] = [];
 
-      if (account_id) {
+      if (account_id && account_id !== '0') {
         whereClause += " AND account_id = ?";
         params.push(account_id);
       }
@@ -218,6 +243,53 @@ async function startServer() {
       res.json({ categoryStats, summary });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/accounts/balances", (req, res) => {
+    try {
+      const balances = db.prepare(`
+        SELECT 
+          a.id, 
+          a.name,
+          a.logo_url,
+          COALESCE(SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE -t.amount END), 0) as balance
+        FROM accounts a
+        LEFT JOIN transactions t ON a.id = t.account_id
+        GROUP BY a.id
+      `).all();
+      res.json(balances);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch account balances" });
+    }
+  });
+
+  app.post("/api/transfer", (req, res) => {
+    const { from_account_id, to_account_id, amount, date, description } = req.body;
+    
+    if (!from_account_id || !to_account_id || !amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid transfer details" });
+    }
+
+    const transfer = db.transaction(() => {
+      // 1. Create expense from source account
+      db.prepare(`
+        INSERT INTO transactions (title, amount, type, mode, category, date, description, account_id)
+        VALUES (?, ?, 'expense', 'digital', 'Transfer', ?, ?, ?)
+      `).run(`Transfer to Account #${to_account_id}`, amount, date, description || "Internal Transfer", from_account_id);
+
+      // 2. Create credit to destination account
+      db.prepare(`
+        INSERT INTO transactions (title, amount, type, mode, category, date, description, account_id)
+        VALUES (?, ?, 'credit', 'digital', 'Transfer', ?, ?, ?)
+      `).run(`Transfer from Account #${from_account_id}`, amount, date, description || "Internal Transfer", to_account_id);
+    });
+
+    try {
+      transfer();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Transfer failed" });
     }
   });
 

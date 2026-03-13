@@ -29,7 +29,7 @@ export default function ReportExport({ transactions }: ReportExportProps) {
 
     autoTable(doc, {
       startY: 40,
-      head: [['Date', 'Title', 'Type', 'Mode', 'Taxonomy', 'Amount']],
+      head: [['Date', 'Title', 'Type', 'Mode', 'Category', 'Amount']],
       body: tableData,
       theme: 'grid',
       headStyles: { 
@@ -61,10 +61,10 @@ export default function ReportExport({ transactions }: ReportExportProps) {
     
     doc.setTextColor(0);
     doc.setFontSize(11);
-    doc.text(`Total Credits:`, 14, finalY);
+    doc.text(`Total Income:`, 14, finalY);
     doc.text(`INR ${totalCredits.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY, { align: 'right' });
     
-    doc.text(`Total Expenses:`, 14, finalY + 7);
+    doc.text(`Total Outflow:`, 14, finalY + 7);
     doc.text(`INR ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY + 7, { align: 'right' });
     
     doc.setDrawColor(200);
@@ -72,7 +72,7 @@ export default function ReportExport({ transactions }: ReportExportProps) {
     
     doc.setFontSize(12);
     doc.setTextColor(16, 185, 129);
-    doc.text(`Net Balance:`, 14, finalY + 17);
+    doc.text(`Current Balance:`, 14, finalY + 17);
     doc.text(`INR ${(totalCredits - totalExpenses).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY + 17, { align: 'right' });
 
     doc.save(`account-report-${format(new Date(), "yyyy-MM-dd")}.pdf`);

@@ -12,7 +12,7 @@ export default function CategorySummary({ stats }: CategorySummaryProps) {
     <div className="space-y-8" id="category-summary">
       {categoryData.length === 0 && (
         <div className="p-12 text-center border border-dashed border-border rounded-3xl">
-          <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest">No taxonomy data for this period</p>
+          <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest">No category data for this period</p>
         </div>
       )}
       {categoryData.map((stat) => {
