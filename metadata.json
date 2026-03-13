@@ -1,0 +1,5 @@
+{
+  "name": "XpenseFlow - Advanced Expense Tracker",
+  "description": "A comprehensive PWA expense tracker with Excel import, advanced analytics, and report generation.",
+  "requestFramePermissions": []
+}
