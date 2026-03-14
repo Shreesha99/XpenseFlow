@@ -1,34 +1,6 @@
 import { useEffect, useState, ReactNode, useMemo } from "react";
-import {
-  Wallet,
-  Plus,
-  Calculator as CalcIcon,
-  Tags,
-  LayoutDashboard,
-  History,
-  PieChart,
-  Settings,
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Trash2,
-  RotateCcw,
-  X,
-  ArrowRightLeft,
-  LogIn,
-  LogOut,
-  FileUp,
-} from "lucide-react";
-import {
-  Transaction,
-  Stats,
-  Account,
-  Category,
-  CategoryStat,
-  Summary,
-} from "./types";
+import { Wallet, Plus, Calculator as CalcIcon, Tags, LayoutDashboard, History, PieChart, Settings, Search, Filter, ChevronLeft, ChevronRight, CreditCard, Trash2, RotateCcw, X, ArrowRightLeft, LogIn, LogOut, FileUp } from "lucide-react";
+import { Transaction, Stats, Account, Category, CategoryStat, Summary } from "./types";
 import TransactionForm from "./components/TransactionForm";
 import AccountGrid from "./components/AccountGrid";
 import CategorySummary from "./components/CategorySummary";
@@ -39,63 +11,15 @@ import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  isSameMonth,
-  parseISO,
-  isSameDay,
-  isSameYear,
-  isWithinInterval,
-  addDays,
-  subDays,
-  addYears,
-  subYears,
-  startOfDay,
-  endOfDay,
-  endOfMonth,
-  endOfYear,
-} from "date-fns";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart as RePie,
-  Pie,
-  Cell,
-} from "recharts";
-import {
-  auth,
-  db,
-  signIn,
-  logOut,
-  onAuthStateChanged,
-  collection,
-  query,
-  where,
-  onSnapshot,
-  orderBy,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  Timestamp,
-  User,
+import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
+import { 
+  auth, db, signIn, logOut, onAuthStateChanged, 
+  collection, query, where, onSnapshot, orderBy, 
+  addDoc, deleteDoc, doc, updateDoc, Timestamp, User 
 } from "./firebase";
 
-type View =
-  | "dashboard"
-  | "transactions"
-  | "planning"
-  | "categories"
-  | "settings"
-  | "accounts";
+type View = 'dashboard' | 'transactions' | 'planning' | 'categories' | 'settings' | 'accounts';
 
 const INDIAN_BANKS = [
   { name: "State Bank of India", logo: "https://logo.clearbit.com/sbi.co.in" },
@@ -105,54 +29,26 @@ const INDIAN_BANKS = [
   { name: "Kotak Mahindra Bank", logo: "https://logo.clearbit.com/kotak.com" },
   { name: "IndusInd Bank", logo: "https://logo.clearbit.com/indusind.com" },
   { name: "Yes Bank", logo: "https://logo.clearbit.com/yesbank.in" },
-  {
-    name: "Punjab National Bank",
-    logo: "https://logo.clearbit.com/pnbindia.in",
-  },
+  { name: "Punjab National Bank", logo: "https://logo.clearbit.com/pnbindia.in" },
   { name: "Bank of Baroda", logo: "https://logo.clearbit.com/bankofbaroda.in" },
   { name: "Canara Bank", logo: "https://logo.clearbit.com/canarabank.com" },
-  {
-    name: "Paytm Payments Bank",
-    logo: "https://logo.clearbit.com/paytmbank.com",
-  },
+  { name: "Paytm Payments Bank", logo: "https://logo.clearbit.com/paytmbank.com" },
   { name: "PhonePe / Wallet", logo: "https://logo.clearbit.com/phonepe.com" },
   { name: "Google Pay / GPay", logo: "https://logo.clearbit.com/google.com" },
   { name: "Amazon Pay", logo: "https://logo.clearbit.com/amazon.in" },
-  { name: "Other / Cash", logo: "" },
+  { name: "Other / Cash", logo: "" }
 ];
 
-function BankLogo({
-  name,
-  url,
-  className,
-}: {
-  name: string;
-  url?: string;
-  className?: string;
-}) {
-  const bank = INDIAN_BANKS.find((b) => b.name === name);
+function BankLogo({ name, url, className }: { name: string, url?: string, className?: string }) {
+  const bank = INDIAN_BANKS.find(b => b.name === name);
   const logo = url || bank?.logo;
-  if (!logo)
-    return (
-      <div
-        className={`bg-muted rounded-lg flex items-center justify-center ${className}`}
-      >
-        <CreditCard className="w-4 h-4" />
-      </div>
-    );
-  return (
-    <img
-      src={logo}
-      alt={name}
-      className={`rounded-lg object-contain bg-white p-1 ${className}`}
-      referrerPolicy="no-referrer"
-    />
-  );
+  if (!logo) return <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}><CreditCard className="w-4 h-4" /></div>;
+  return <img src={logo} alt={name} className={`rounded-lg object-contain bg-white p-1 ${className}`} referrerPolicy="no-referrer" />;
 }
 
 export default function App() {
   return (
-    <ErrorBoundary children={undefined}>
+    <ErrorBoundary>
       <AppContent />
     </ErrorBoundary>
   );
@@ -163,20 +59,18 @@ function AppContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [activeView, setActiveView] = useState<View>("dashboard");
+  const [activeView, setActiveView] = useState<View>('dashboard');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
+  
   const [selectedAccountId, setSelectedAccountId] = useState<string>("0");
-
+  
   // Date Filtering State
-  const [filterMode, setFilterMode] = useState<
-    "day" | "month" | "year" | "custom"
-  >("month");
+  const [filterMode, setFilterMode] = useState<'day' | 'month' | 'year' | 'custom'>('month');
   const [filterDate, setFilterDate] = useState(new Date());
-  const [customRange, setCustomRange] = useState<{ start: Date; end: Date }>({
+  const [customRange, setCustomRange] = useState<{start: Date, end: Date}>({
     start: startOfMonth(new Date()),
-    end: new Date(),
+    end: new Date()
   });
 
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -185,61 +79,53 @@ function AppContent() {
     from: "",
     to: "",
     amount: "",
-    description: "",
+    description: ""
   });
 
   // Derived Filtered Transactions
   const filteredTransactions = useMemo(() => {
     if (!user) return [];
-
-    return transactions.filter((t) => {
+    
+    return transactions.filter(t => {
       const date = parseISO(String(t.date));
       let matchesTime = false;
-
-      if (filterMode === "day") {
+      
+      if (filterMode === 'day') {
         matchesTime = isSameDay(date, filterDate);
-      } else if (filterMode === "month") {
+      } else if (filterMode === 'month') {
         matchesTime = isSameMonth(date, filterDate);
-      } else if (filterMode === "year") {
+      } else if (filterMode === 'year') {
         matchesTime = isSameYear(date, filterDate);
-      } else if (filterMode === "custom") {
-        matchesTime = isWithinInterval(date, {
-          start: startOfDay(customRange.start),
-          end: endOfDay(customRange.end),
+      } else if (filterMode === 'custom') {
+        matchesTime = isWithinInterval(date, { 
+          start: startOfDay(customRange.start), 
+          end: endOfDay(customRange.end) 
         });
       }
 
-      const matchesAccount =
-        selectedAccountId === "0" || t.account_id === selectedAccountId;
+      const matchesAccount = selectedAccountId === "0" || t.account_id === selectedAccountId;
       return matchesTime && matchesAccount;
     });
-  }, [
-    transactions,
-    filterMode,
-    filterDate,
-    customRange,
-    selectedAccountId,
-    user,
-  ]);
+  }, [transactions, filterMode, filterDate, customRange, selectedAccountId, user]);
 
   // End of period for balance snapshot
   const endOfPeriod = useMemo(() => {
-    if (filterMode === "day") return endOfDay(filterDate);
-    if (filterMode === "month") return endOfMonth(filterDate);
-    if (filterMode === "year") return endOfYear(filterDate);
-    if (filterMode === "custom") return endOfDay(customRange.end);
+    if (filterMode === 'day') return endOfDay(filterDate);
+    if (filterMode === 'month') return endOfMonth(filterDate);
+    if (filterMode === 'year') return endOfYear(filterDate);
+    if (filterMode === 'custom') return endOfDay(customRange.end);
     return new Date();
   }, [filterMode, filterDate, customRange]);
 
   // Filtered Account Balances (Snapshot at end of period)
   const filteredAccountBalances = useMemo(() => {
-    return accounts.map((acc) => {
-      const accTransactions = transactions.filter((t) => {
+    return accounts.map(acc => {
+      const accTransactions = transactions.filter(t => {
         const date = parseISO(String(t.date));
         return date <= endOfPeriod && t.account_id === acc.id;
       });
       const balance = accTransactions.reduce((sum, t) => {
-        return t.type === "credit" ? sum + t.amount : sum - t.amount;
+        return t.type === 'credit' ? sum + t.amount : sum - t.amount;
       }, 0);
       return { ...acc, balance };
     });
@@ -248,16 +134,16 @@ function AppContent() {
   // Derived Stats
   const stats = useMemo<Stats | null>(() => {
     if (!user) return null;
-
+    
     const categoryMap = new Map<string, CategoryStat>();
     const summary: Summary = {
       digital_credits: 0,
       in_hand_credits: 0,
       digital_expenses: 0,
-      in_hand_expenses: 0,
+      in_hand_expenses: 0
     };
 
-    filteredTransactions.forEach((t) => {
+    filteredTransactions.forEach(t => {
       let catStat = categoryMap.get(t.category) || {
         category: t.category,
         digital_expense: 0,
@@ -265,11 +151,11 @@ function AppContent() {
         total_expense: 0,
         digital_credit: 0,
         in_hand_credit: 0,
-        total_credit: 0,
+        total_credit: 0
       };
 
-      if (t.type === "credit") {
-        if (t.mode === "digital") {
+      if (t.type === 'credit') {
+        if (t.mode === 'digital') {
           catStat.digital_credit += t.amount;
           summary.digital_credits += t.amount;
         } else {
@@ -278,7 +164,7 @@ function AppContent() {
         }
         catStat.total_credit += t.amount;
       } else {
-        if (t.mode === "digital") {
+        if (t.mode === 'digital') {
           catStat.digital_expense += t.amount;
           summary.digital_expenses += t.amount;
         } else {
@@ -293,17 +179,15 @@ function AppContent() {
 
     return {
       categoryStats: Array.from(categoryMap.values()),
-      summary,
+      summary
     };
   }, [filteredTransactions, user]);
 
   const accountBalances = useMemo(() => {
-    return accounts.map((acc) => {
-      const accTransactions = transactions.filter(
-        (t) => t.account_id === acc.id
-      );
+    return accounts.map(acc => {
+      const accTransactions = transactions.filter(t => t.account_id === acc.id);
       const balance = accTransactions.reduce((sum, t) => {
-        return t.type === "credit" ? sum + t.amount : sum - t.amount;
+        return t.type === 'credit' ? sum + t.amount : sum - t.amount;
       }, 0);
       return { ...acc, balance };
     });
@@ -346,24 +230,18 @@ function AppContent() {
     );
 
     const unsubTrans = onSnapshot(qTransactions, (snapshot) => {
-      const trans = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Transaction)
-      );
+      const trans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
       setTransactions(trans);
       setLoading(false);
     });
 
     const unsubAcc = onSnapshot(qAccounts, (snapshot) => {
-      const accs = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Account)
-      );
+      const accs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
       setAccounts(accs);
     });
 
     const unsubCat = onSnapshot(qCategories, (snapshot) => {
-      const cats = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Category)
-      );
+      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
       setCategories(cats);
     });
 
@@ -388,7 +266,7 @@ function AppContent() {
     try {
       await addDoc(collection(db, "categories"), {
         name,
-        uid: user.uid,
+        uid: user.uid
       });
     } catch (error) {
       console.error("Failed to add category:", error);
@@ -411,7 +289,7 @@ function AppContent() {
         name,
         logo_url,
         uid: user.uid,
-        balance: 0,
+        balance: 0
       });
     } catch (error) {
       console.error("Failed to add account:", error);
@@ -437,33 +315,29 @@ function AppContent() {
       // Create two transactions for the transfer
       await Promise.all([
         addDoc(collection(db, "transactions"), {
-          title: `Transfer to ${
-            accounts.find((a) => a.id === transferData.to)?.name
-          }`,
+          title: `Transfer to ${accounts.find(a => a.id === transferData.to)?.name}`,
           amount,
-          type: "expense",
-          mode: "digital",
-          category: "Transfer",
+          type: 'expense',
+          mode: 'digital',
+          category: 'Transfer',
           account_id: transferData.from,
           date,
           description: transferData.description,
           created_at: createdAt,
-          uid: user.uid,
+          uid: user.uid
         }),
         addDoc(collection(db, "transactions"), {
-          title: `Transfer from ${
-            accounts.find((a) => a.id === transferData.from)?.name
-          }`,
+          title: `Transfer from ${accounts.find(a => a.id === transferData.from)?.name}`,
           amount,
-          type: "credit",
-          mode: "digital",
-          category: "Transfer",
+          type: 'credit',
+          mode: 'digital',
+          category: 'Transfer',
           account_id: transferData.to,
           date,
           description: transferData.description,
           created_at: createdAt,
-          uid: user.uid,
-        }),
+          uid: user.uid
+        })
       ]);
 
       setShowTransfer(false);
@@ -475,16 +349,11 @@ function AppContent() {
 
   const handleDeleteAccount = async (id: string) => {
     if (!user) return;
-    if (
-      !confirm("Are you sure? This will delete all transactions for this bank.")
-    )
-      return;
+    if (!confirm("Are you sure? This will delete all transactions for this bank.")) return;
     try {
       // Delete transactions associated with this account
-      const accTransactions = transactions.filter((t) => t.account_id === id);
-      await Promise.all(
-        accTransactions.map((t) => deleteDoc(doc(db, "transactions", t.id)))
-      );
+      const accTransactions = transactions.filter(t => t.account_id === id);
+      await Promise.all(accTransactions.map(t => deleteDoc(doc(db, "transactions", t.id))));
       await deleteDoc(doc(db, "accounts", id));
       if (selectedAccountId === id) setSelectedAccountId("0");
     } catch (error) {
@@ -496,24 +365,17 @@ function AppContent() {
     digital_credits: 0,
     in_hand_credits: 0,
     digital_expenses: 0,
-    in_hand_expenses: 0,
+    in_hand_expenses: 0
   };
 
-  const totalCredits =
-    (Number(summary.digital_credits) || 0) +
-    (Number(summary.in_hand_credits) || 0);
-  const totalExpenses =
-    (Number(summary.digital_expenses) || 0) +
-    (Number(summary.in_hand_expenses) || 0);
-
+  const totalCredits = (Number(summary.digital_credits) || 0) + (Number(summary.in_hand_credits) || 0);
+  const totalExpenses = (Number(summary.digital_expenses) || 0) + (Number(summary.in_hand_expenses) || 0);
+  
   const actualCurrentBalance = useMemo(() => {
     if (selectedAccountId === "0") {
       return filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0);
     }
-    return (
-      filteredAccountBalances.find((a) => a.id === selectedAccountId)
-        ?.balance || 0
-    );
+    return filteredAccountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
   }, [filteredAccountBalances, selectedAccountId]);
 
   return (
@@ -526,66 +388,57 @@ function AppContent() {
               <Wallet className="w-6 h-6" />
             </div>
             <div className="hidden lg:block overflow-hidden">
-              <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
-                XpenseFlow
-              </h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold whitespace-nowrap">
-                Command Center
-              </p>
+              <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">XpenseFlow</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold whitespace-nowrap">Command Center</p>
             </div>
           </div>
 
           <nav className="space-y-2">
-            <NavItem
-              icon={<LayoutDashboard className="w-5 h-5" />}
-              label="Dashboard"
-              active={activeView === "dashboard"}
-              onClick={() => setActiveView("dashboard")}
+            <NavItem 
+              icon={<LayoutDashboard className="w-5 h-5" />} 
+              label="Dashboard" 
+              active={activeView === 'dashboard'} 
+              onClick={() => setActiveView('dashboard')} 
             />
-            <NavItem
-              icon={<CreditCard className="w-5 h-5" />}
-              label="Banks"
-              active={activeView === "accounts"}
-              onClick={() => setActiveView("accounts")}
+            <NavItem 
+              icon={<CreditCard className="w-5 h-5" />} 
+              label="Banks" 
+              active={activeView === 'accounts'} 
+              onClick={() => setActiveView('accounts')} 
             />
-            <NavItem
-              icon={<History className="w-5 h-5" />}
-              label="Ledger"
-              active={activeView === "transactions"}
-              onClick={() => setActiveView("transactions")}
+            <NavItem 
+              icon={<History className="w-5 h-5" />} 
+              label="Ledger" 
+              active={activeView === 'transactions'} 
+              onClick={() => setActiveView('transactions')} 
             />
-            <NavItem
-              icon={<CalcIcon className="w-5 h-5" />}
-              label="Subscriptions"
-              active={activeView === "planning"}
-              onClick={() => setActiveView("planning")}
+            <NavItem 
+              icon={<CalcIcon className="w-5 h-5" />} 
+              label="Subscriptions" 
+              active={activeView === 'planning'} 
+              onClick={() => setActiveView('planning')} 
             />
-            <NavItem
-              icon={<Tags className="w-5 h-5" />}
-              label="Categories"
-              active={activeView === "categories"}
-              onClick={() => setActiveView("categories")}
+            <NavItem 
+              icon={<Tags className="w-5 h-5" />} 
+              label="Categories" 
+              active={activeView === 'categories'} 
+              onClick={() => setActiveView('categories')} 
             />
-            <NavItem
-              icon={<Settings className="w-5 h-5" />}
-              label="Settings"
-              active={activeView === "settings"}
-              onClick={() => setActiveView("settings")}
+            <NavItem 
+              icon={<Settings className="w-5 h-5" />} 
+              label="Settings" 
+              active={activeView === 'settings'} 
+              onClick={() => setActiveView('settings')} 
             />
           </nav>
 
           <div className="mt-10 hidden lg:block">
             <div className="flex items-center justify-between mb-4 px-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                Accounts
-              </p>
-              <button
-                onClick={() => {
-                  const name = prompt("Enter account name:");
-                  if (name) handleAddAccount(name);
-                }}
-                className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors"
-              >
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Accounts</p>
+              <button onClick={() => {
+                const name = prompt("Enter account name:");
+                if (name) handleAddAccount(name);
+              }} className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors">
                 <Plus className="w-3 h-3" />
               </button>
             </div>
@@ -593,28 +446,28 @@ function AppContent() {
               <button
                 onClick={() => {
                   setSelectedAccountId("0");
-                  setActiveView("dashboard");
+                  setActiveView('dashboard');
                 }}
                 className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedAccountId === "0"
-                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
+                  selectedAccountId === "0" 
+                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
                 }`}
               >
                 <PieChart className="w-3.5 h-3.5" />
                 <span className="truncate">All Accounts</span>
               </button>
-              {accounts.map((acc) => (
+              {accounts.map(acc => (
                 <button
                   key={acc.id}
                   onClick={() => {
                     setSelectedAccountId(acc.id);
-                    if (activeView === "accounts") setActiveView("dashboard");
+                    if (activeView === 'accounts') setActiveView('dashboard');
                   }}
                   className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                    selectedAccountId === acc.id
-                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
+                    selectedAccountId === acc.id 
+                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
                   }`}
                 >
                   <CreditCard className="w-3.5 h-3.5" />
@@ -626,13 +479,11 @@ function AppContent() {
 
           <div className="mt-auto pt-6 border-t border-border">
             <div className="flex items-center justify-between mb-6 px-2 hidden lg:flex">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Theme
-              </span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Theme</span>
               <ThemeToggle />
             </div>
             {user ? (
-              <button
+              <button 
                 onClick={logOut}
                 className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-muted-foreground hover:text-rose-500 transition-colors text-sm rounded-xl hover:bg-rose-500/10"
               >
@@ -640,7 +491,7 @@ function AppContent() {
                 <span className="hidden lg:block">Logout</span>
               </button>
             ) : (
-              <button
+              <button 
                 onClick={signIn}
                 className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-emerald-500 hover:text-emerald-400 transition-colors text-sm rounded-xl hover:bg-emerald-500/10"
               >
@@ -659,14 +510,14 @@ function AppContent() {
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
               {/* Filter Modes */}
               <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
-                {(["day", "month", "year", "custom"] as const).map((mode) => (
+                {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setFilterMode(mode)}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                      filterMode === mode
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      filterMode === mode 
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     {mode}
@@ -676,34 +527,28 @@ function AppContent() {
 
               {/* Date Switcher */}
               <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1 w-full sm:w-auto justify-between sm:justify-start">
-                {filterMode !== "custom" ? (
+                {filterMode !== 'custom' ? (
                   <>
-                    <button
+                    <button 
                       onClick={() => {
-                        if (filterMode === "day")
-                          setFilterDate(subDays(filterDate, 1));
-                        if (filterMode === "month")
-                          setFilterDate(subMonths(filterDate, 1));
-                        if (filterMode === "year")
-                          setFilterDate(subYears(filterDate, 1));
+                        if (filterMode === 'day') setFilterDate(subDays(filterDate, 1));
+                        if (filterMode === 'month') setFilterDate(subMonths(filterDate, 1));
+                        if (filterMode === 'year') setFilterDate(subYears(filterDate, 1));
                       }}
                       className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-[11px] md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight truncate">
-                      {filterMode === "day" && format(filterDate, "dd MMM yy")}
-                      {filterMode === "month" && format(filterDate, "MMM yyyy")}
-                      {filterMode === "year" && format(filterDate, "yyyy")}
+                      {filterMode === 'day' && format(filterDate, "dd MMM yy")}
+                      {filterMode === 'month' && format(filterDate, "MMM yyyy")}
+                      {filterMode === 'year' && format(filterDate, "yyyy")}
                     </span>
-                    <button
+                    <button 
                       onClick={() => {
-                        if (filterMode === "day")
-                          setFilterDate(addDays(filterDate, 1));
-                        if (filterMode === "month")
-                          setFilterDate(addMonths(filterDate, 1));
-                        if (filterMode === "year")
-                          setFilterDate(addYears(filterDate, 1));
+                        if (filterMode === 'day') setFilterDate(addDays(filterDate, 1));
+                        if (filterMode === 'month') setFilterDate(addMonths(filterDate, 1));
+                        if (filterMode === 'year') setFilterDate(addYears(filterDate, 1));
                       }}
                       className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
@@ -712,27 +557,17 @@ function AppContent() {
                   </>
                 ) : (
                   <div className="flex items-center gap-2 px-2 py-1">
-                    <input
-                      type="date"
+                    <input 
+                      type="date" 
                       value={format(customRange.start, "yyyy-MM-dd")}
-                      onChange={(e) =>
-                        setCustomRange({
-                          ...customRange,
-                          start: new Date(e.target.value),
-                        })
-                      }
+                      onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
                       className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
                     />
                     <span className="text-muted-foreground text-[10px]">→</span>
-                    <input
-                      type="date"
+                    <input 
+                      type="date" 
                       value={format(customRange.end, "yyyy-MM-dd")}
-                      onChange={(e) =>
-                        setCustomRange({
-                          ...customRange,
-                          end: new Date(e.target.value),
-                        })
-                      }
+                      onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
                       className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
                     />
                   </div>
@@ -743,16 +578,16 @@ function AppContent() {
             <div className="flex items-center gap-3 w-full lg:flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
+                <input 
+                  type="text" 
+                  placeholder="Search..." 
                   className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
                 />
               </div>
-
+              
               <div className="flex items-center gap-2">
                 <ReportExport transactions={filteredTransactions} />
-                <button
+                <button 
                   onClick={() => setShowForm(!showForm)}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 whitespace-nowrap"
                 >
@@ -766,7 +601,7 @@ function AppContent() {
 
         <main className="flex-1 overflow-auto p-4 sm:p-8 lg:p-12 pb-32 md:pb-8">
           <AnimatePresence mode="wait">
-            {activeView === "dashboard" && (
+            {activeView === 'dashboard' && (
               <motion.div
                 key="dashboard"
                 initial={{ opacity: 0, y: 20 }}
@@ -780,20 +615,15 @@ function AppContent() {
                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
                   <div className="relative">
                     <p className="font-display italic text-5xl md:text-6xl lg:text-8xl text-foreground leading-none mb-6 tracking-tighter">
-                      Financial <br />
+                      Financial <br /> 
                       <span className="text-emerald-500">Intelligence.</span>
                     </p>
                     {!user ? (
                       <div className="bg-card border border-border p-8 rounded-3xl text-center space-y-4 shadow-2xl">
                         <Wallet className="w-12 h-12 text-emerald-500 mx-auto" />
-                        <h3 className="text-xl font-bold">
-                          Connect your wallet
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Sign in to start tracking your expenses across all
-                          your bank accounts.
-                        </p>
-                        <button
+                        <h3 className="text-xl font-bold">Connect your wallet</h3>
+                        <p className="text-sm text-muted-foreground">Sign in to start tracking your expenses across all your bank accounts.</p>
+                        <button 
                           onClick={signIn}
                           className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20"
                         >
@@ -803,94 +633,50 @@ function AppContent() {
                     ) : (
                       <div className="flex flex-wrap gap-8 md:gap-12 mt-12">
                         <div className="space-y-1 flex items-center gap-4">
-                          {selectedAccountId !== "0" &&
-                            accountBalances.find(
-                              (a) => a.id === selectedAccountId
-                            ) && (
-                              <BankLogo
-                                url={
-                                  accountBalances.find(
-                                    (a) => a.id === selectedAccountId
-                                  )?.logo_url
-                                }
-                                name={
-                                  accountBalances.find(
-                                    (a) => a.id === selectedAccountId
-                                  )?.name || ""
-                                }
-                                className="w-12 h-12 md:w-16 md:h-16"
-                              />
-                            )}
+                          {selectedAccountId !== "0" && accountBalances.find(a => a.id === selectedAccountId) && (
+                            <BankLogo 
+                              url={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
+                              name={accountBalances.find(a => a.id === selectedAccountId)?.name || ""} 
+                              className="w-12 h-12 md:w-16 md:h-16"
+                            />
+                          )}
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                              Current Balance
-                            </p>
-                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">
-                              ₹
-                              {actualCurrentBalance.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                              })}
-                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
+                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                           </div>
                         </div>
                         <div className="w-px h-12 bg-border hidden sm:block" />
                         <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                            Total Income
-                          </p>
-                          <p className="text-2xl font-bold tracking-tighter text-emerald-500">
-                            ₹{totalCredits.toLocaleString()}
-                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Income</p>
+                          <p className="text-2xl font-bold tracking-tighter text-emerald-500">₹{totalCredits.toLocaleString()}</p>
                         </div>
                         <div className="w-px h-12 bg-border hidden sm:block" />
                         <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                            Total Outflow
-                          </p>
-                          <p className="text-2xl font-bold tracking-tighter text-rose-500">
-                            ₹{totalExpenses.toLocaleString()}
-                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Outflow</p>
+                          <p className="text-2xl font-bold tracking-tighter text-rose-500">₹{totalExpenses.toLocaleString()}</p>
                         </div>
                       </div>
                     )}
 
                     {/* Bank Balances Widget */}
-                    {user &&
-                      selectedAccountId === "0" &&
-                      filteredAccountBalances.length > 0 && (
-                        <div className="mt-12 pt-12 border-t border-border">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">
-                            Bank Breakdown (Snapshot)
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {filteredAccountBalances.map((acc) => (
-                              <div
-                                key={acc.id}
-                                className="p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 transition-all group"
-                              >
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CreditCard className="w-3 h-3 text-emerald-500" />
-                                  <p className="text-[10px] font-bold text-foreground truncate">
-                                    {acc.name}
-                                  </p>
-                                </div>
-                                <p
-                                  className={`text-sm font-bold tracking-tight ${
-                                    acc.balance >= 0
-                                      ? "text-emerald-500"
-                                      : "text-rose-500"
-                                  }`}
-                                >
-                                  ₹
-                                  {acc.balance.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                  })}
-                                </p>
+                    {user && selectedAccountId === "0" && filteredAccountBalances.length > 0 && (
+                      <div className="mt-12 pt-12 border-t border-border">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Bank Breakdown (Snapshot)</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                          {filteredAccountBalances.map(acc => (
+                            <div key={acc.id} className="p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 transition-all group">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CreditCard className="w-3 h-3 text-emerald-500" />
+                                <p className="text-[10px] font-bold text-foreground truncate">{acc.name}</p>
                               </div>
-                            ))}
-                          </div>
+                              <p className={`text-sm font-bold tracking-tight ${acc.balance >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                ₹{acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -898,46 +684,33 @@ function AppContent() {
                   <div className="xl:col-span-8 space-y-8">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <h2 className="text-2xl font-bold tracking-tight">
-                          Recent Activity
-                        </h2>
-                        <p className="text-xs text-muted-foreground">
-                          Your latest financial movements across all modes.
-                        </p>
+                        <h2 className="text-2xl font-bold tracking-tight">Recent Activity</h2>
+                        <p className="text-xs text-muted-foreground">Your latest financial movements across all modes.</p>
                       </div>
-                      <button
-                        onClick={() => setActiveView("transactions")}
+                      <button 
+                        onClick={() => setActiveView('transactions')} 
                         className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors border-b border-emerald-500/20 pb-1"
                       >
                         View Full Ledger
                       </button>
                     </div>
                     <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-                      <AccountGrid
-                        transactions={filteredTransactions.slice(0, 8)}
-                        stats={stats}
-                        onDelete={handleDelete}
-                        compact
-                      />
+                      <AccountGrid transactions={filteredTransactions.slice(0, 8)} stats={stats} onDelete={handleDelete} compact />
                     </div>
                   </div>
 
                   <div className="xl:col-span-4 space-y-12">
                     <section>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                          Allocation
-                        </h2>
+                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Allocation</h2>
                         <PieChart className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <CategorySummary stats={stats} />
                     </section>
-
+                    
                     <section>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                          Forecast
-                        </h2>
+                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Forecast</h2>
                         <CalcIcon className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
@@ -949,7 +722,7 @@ function AppContent() {
               </motion.div>
             )}
 
-            {activeView === "accounts" && (
+            {activeView === 'accounts' && (
               <motion.div
                 key="accounts"
                 initial={{ opacity: 0, y: 20 }}
@@ -959,22 +732,18 @@ function AppContent() {
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
-                      My Banks & Wallets
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      See how much money you have in each bank or wallet.
-                    </p>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">My Banks & Wallets</h2>
+                    <p className="text-sm text-muted-foreground mt-1">See how much money you have in each bank or wallet.</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <button
+                    <button 
                       onClick={() => {}}
                       className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Refresh
                     </button>
-                    <button
+                    <button 
                       onClick={() => setShowTransfer(true)}
                       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
                     >
@@ -985,22 +754,18 @@ function AppContent() {
                 </div>
 
                 {showAddAccount && (
-                  <motion.div
+                  <motion.div 
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     className="flex flex-col md:flex-row gap-4 bg-card p-6 rounded-3xl border border-border shadow-xl"
                   >
                     <div className="flex-1 space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Select Bank
-                      </label>
-                      <select
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Select Bank</label>
+                      <select 
                         autoFocus
                         onChange={(e) => {
-                          const bank = INDIAN_BANKS.find(
-                            (b) => b.name === e.target.value
-                          );
+                          const bank = INDIAN_BANKS.find(b => b.name === e.target.value);
                           if (bank) {
                             handleAddAccount(bank.name, bank.logo);
                             setShowAddAccount(false);
@@ -1009,18 +774,12 @@ function AppContent() {
                         className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
                       >
                         <option value="">Select Indian Bank...</option>
-                        {INDIAN_BANKS.map((bank) => (
-                          <option
-                            key={bank.name}
-                            value={bank.name}
-                            className="bg-card"
-                          >
-                            {bank.name}
-                          </option>
+                        {INDIAN_BANKS.map(bank => (
+                          <option key={bank.name} value={bank.name} className="bg-card">{bank.name}</option>
                         ))}
                       </select>
                     </div>
-                    <button
+                    <button 
                       onClick={() => setShowAddAccount(false)}
                       className="self-end p-3 text-muted-foreground hover:text-foreground bg-muted rounded-xl border border-border"
                     >
@@ -1035,59 +794,41 @@ function AppContent() {
                     <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
                       <div className="flex items-center justify-between mb-8">
                         <div>
-                          <h3 className="text-xl font-bold tracking-tight">
-                            Where is my money?
-                          </h3>
-                          <p className="text-xs text-muted-foreground">
-                            A breakdown of your savings across different places.
-                          </p>
+                          <h3 className="text-xl font-bold tracking-tight">Where is my money?</h3>
+                          <p className="text-xs text-muted-foreground">A breakdown of your savings across different places.</p>
                         </div>
                         <PieChart className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={filteredAccountBalances}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              vertical={false}
-                              stroke="rgba(255,255,255,0.05)"
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                            <XAxis 
+                              dataKey="name" 
+                              axisLine={false} 
+                              tickLine={false} 
+                              tick={{ fontSize: 10, fontWeight: 600, fill: 'currentColor', opacity: 0.5 }}
                             />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                fill: "currentColor",
-                                opacity: 0.5,
-                              }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                fill: "currentColor",
-                                opacity: 0.5,
-                              }}
+                            <YAxis 
+                              axisLine={false} 
+                              tickLine={false} 
+                              tick={{ fontSize: 10, fontWeight: 600, fill: 'currentColor', opacity: 0.5 }}
                               tickFormatter={(value) => `₹${value / 1000}k`}
                             />
-                            <Tooltip
-                              cursor={{ fill: "rgba(16,185,129,0.05)" }}
-                              contentStyle={{
-                                backgroundColor: "var(--card)",
-                                border: "1px solid var(--border)",
-                                borderRadius: "16px",
-                                fontSize: "12px",
-                                fontWeight: "bold",
+                            <Tooltip 
+                              cursor={{ fill: 'rgba(16,185,129,0.05)' }}
+                              contentStyle={{ 
+                                backgroundColor: 'var(--card)', 
+                                border: '1px solid var(--border)', 
+                                borderRadius: '16px',
+                                fontSize: '12px',
+                                fontWeight: 'bold'
                               }}
                             />
-                            <Bar
-                              dataKey="balance"
-                              fill="var(--emerald-500)"
-                              radius={[8, 8, 0, 0]}
+                            <Bar 
+                              dataKey="balance" 
+                              fill="var(--emerald-500)" 
+                              radius={[8, 8, 0, 0]} 
                               fillOpacity={0.8}
                               className="fill-emerald-500"
                             />
@@ -1099,40 +840,19 @@ function AppContent() {
 
                   <div className="lg:col-span-4 space-y-8">
                     <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 text-center flex flex-col justify-center h-full">
-                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">
-                        Total Cash (Snapshot)
-                      </p>
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">Total Cash (Snapshot)</p>
                       <p className="text-5xl font-bold tracking-tighter text-foreground mb-4">
-                        ₹
-                        {filteredAccountBalances
-                          .reduce((sum, acc) => sum + acc.balance, 0)
-                          .toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
+                        ₹{filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                       <div className="h-px bg-emerald-500/10 w-full my-6" />
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Total Accounts
-                          </span>
-                          <span className="text-sm font-bold">
-                            {filteredAccountBalances.length}
-                          </span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Accounts</span>
+                          <span className="text-sm font-bold">{filteredAccountBalances.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Average per Account
-                          </span>
-                          <span className="text-sm font-bold">
-                            ₹
-                            {Math.round(
-                              filteredAccountBalances.reduce(
-                                (sum, acc) => sum + acc.balance,
-                                0
-                              ) / (filteredAccountBalances.length || 1)
-                            ).toLocaleString()}
-                          </span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Average per Account</span>
+                          <span className="text-sm font-bold">₹{Math.round(filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0) / (filteredAccountBalances.length || 1)).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -1140,38 +860,30 @@ function AppContent() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredAccountBalances.map((acc) => (
-                    <div
-                      key={acc.id}
+                  {filteredAccountBalances.map(acc => (
+                    <div 
+                      key={acc.id} 
                       onClick={() => {
                         setSelectedAccountId(acc.id);
-                        setActiveView("dashboard");
+                        setActiveView('dashboard');
                       }}
                       className="p-8 bg-card border border-border rounded-[2.5rem] hover:border-emerald-500/50 transition-all hover:shadow-2xl hover:shadow-emerald-500/5 group cursor-pointer relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
-
+                      
                       <div className="flex justify-between items-start mb-8 relative">
                         <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-                          <BankLogo
-                            url={acc.logo_url}
-                            name={acc.name}
-                            className="w-14 h-14"
-                          />
+                          <BankLogo url={acc.logo_url} name={acc.name} className="w-14 h-14" />
                         </div>
                         <div className="flex flex-col items-end gap-2">
                           <div className="text-right">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
-                              Status
-                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">Status</p>
                             <div className="flex items-center gap-1.5 justify-end">
                               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                              <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
-                                Active
-                              </span>
+                              <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">Active</span>
                             </div>
                           </div>
-                          <button
+                          <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteAccount(acc.id);
@@ -1184,69 +896,46 @@ function AppContent() {
                       </div>
 
                       <div className="space-y-1 relative">
-                        <h3 className="text-xl font-bold tracking-tight text-foreground">
-                          {acc.name}
-                        </h3>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                          Bank / Wallet
-                        </p>
+                        <h3 className="text-xl font-bold tracking-tight text-foreground">{acc.name}</h3>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Bank / Wallet</p>
                       </div>
 
                       <div className="mt-8 pt-8 border-t border-border/50 relative">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
-                          Balance
-                        </p>
-                        <p
-                          className={`text-3xl font-bold tracking-tighter ${
-                            acc.balance >= 0
-                              ? "text-foreground"
-                              : "text-rose-500"
-                          }`}
-                        >
-                          ₹
-                          {acc.balance.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">Balance</p>
+                        <p className={`text-3xl font-bold tracking-tighter ${acc.balance >= 0 ? 'text-foreground' : 'text-rose-500'}`}>
+                          ₹{acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
                   ))}
 
-                  <div
+                  <div 
                     onClick={() => {
                       setShowAddAccount(true);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="p-8 bg-muted/30 border border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-muted/50 hover:border-emerald-500/50 transition-all group cursor-pointer"
                   >
                     <div className="w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Plus className="w-6 h-6 text-muted-foreground group-hover:text-emerald-500" />
                     </div>
-                    <p className="text-sm font-bold text-muted-foreground group-hover:text-foreground">
-                      Add New Bank
-                    </p>
+                    <p className="text-sm font-bold text-muted-foreground group-hover:text-foreground">Add New Bank</p>
                   </div>
                 </div>
 
                 <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-12 text-center">
-                  <h3 className="text-2xl font-bold tracking-tighter mb-4">
-                    Total Savings (Snapshot)
-                  </h3>
+                  <h3 className="text-2xl font-bold tracking-tighter mb-4">Total Savings (Snapshot)</h3>
                   <p className="text-6xl font-bold tracking-tighter text-emerald-500">
-                    ₹
-                    {filteredAccountBalances
-                      .reduce((sum, acc) => sum + acc.balance, 0)
-                      .toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ₹{filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-                    This is the total amount of money you had in all your
-                    accounts combined at the end of the selected period.
+                    This is the total amount of money you had in all your accounts combined at the end of the selected period.
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {activeView === "transactions" && (
+            {activeView === 'transactions' && (
               <motion.div
                 key="transactions"
                 initial={{ opacity: 0, x: 20 }}
@@ -1256,12 +945,8 @@ function AppContent() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-4xl font-bold tracking-tighter">
-                      Financial Ledger
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Detailed history of your income and expenditures.
-                    </p>
+                    <h2 className="text-4xl font-bold tracking-tighter">Financial Ledger</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Detailed history of your income and expenditures.</p>
                   </div>
                   <div className="flex gap-3">
                     <button className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium">
@@ -1271,16 +956,12 @@ function AppContent() {
                   </div>
                 </div>
                 <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-                  <AccountGrid
-                    transactions={filteredTransactions}
-                    stats={stats}
-                    onDelete={handleDelete}
-                  />
+                  <AccountGrid transactions={filteredTransactions} stats={stats} onDelete={handleDelete} />
                 </div>
               </motion.div>
             )}
 
-            {activeView === "planning" && (
+            {activeView === 'planning' && (
               <motion.div
                 key="planning"
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -1291,7 +972,7 @@ function AppContent() {
               </motion.div>
             )}
 
-            {activeView === "categories" && (
+            {activeView === 'categories' && (
               <motion.div
                 key="categories"
                 initial={{ opacity: 0, y: 20 }}
@@ -1301,14 +982,10 @@ function AppContent() {
               >
                 <div className="flex items-center justify-between mb-12">
                   <div>
-                    <h2 className="text-4xl font-bold tracking-tighter">
-                      Categories
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Organize your finances with custom categories.
-                    </p>
+                    <h2 className="text-4xl font-bold tracking-tighter">Categories</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Organize your finances with custom categories.</p>
                   </div>
-                  <button
+                  <button 
                     onClick={() => {
                       const name = prompt("Enter new category name:");
                       if (name) handleAddCategory(name);
@@ -1320,26 +997,18 @@ function AppContent() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {categories.map((cat) => {
-                    const catStat = stats?.categoryStats.find(
-                      (s) => s.category === cat.name
-                    );
+                  {categories.map(cat => {
+                    const catStat = stats?.categoryStats.find(s => s.category === cat.name);
                     return (
-                      <div
-                        key={cat.id}
-                        className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden"
-                      >
+                      <div key={cat.id} className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
                         <div className="flex justify-between items-start mb-6 relative">
                           <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
                             <Tags className="w-6 h-6" />
                           </div>
-                          <button
+                          <button 
                             onClick={() => {
-                              const name = prompt(
-                                "Edit category name:",
-                                cat.name
-                              );
+                              const name = prompt("Edit category name:", cat.name);
                               if (name) handleEditCategory(cat.id, name);
                             }}
                             className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
@@ -1347,28 +1016,20 @@ function AppContent() {
                             <Settings className="w-4 h-4" />
                           </button>
                         </div>
-                        <p className="text-sm font-bold tracking-tight text-foreground relative">
-                          {cat.name}
-                        </p>
+                        <p className="text-sm font-bold tracking-tight text-foreground relative">{cat.name}</p>
                         {catStat ? (
                           <div className="mt-4 pt-4 border-t border-border/50 space-y-1 relative">
                             <div className="flex justify-between text-[9px] font-bold">
                               <span className="text-emerald-500">INCOME</span>
-                              <span>
-                                ₹{catStat.total_credit.toLocaleString()}
-                              </span>
+                              <span>₹{catStat.total_credit.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-[9px] font-bold">
                               <span className="text-rose-500">EXPENSE</span>
-                              <span>
-                                ₹{catStat.total_expense.toLocaleString()}
-                              </span>
+                              <span>₹{catStat.total_expense.toLocaleString()}</span>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">
-                            No activity
-                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">No activity</p>
                         )}
                       </div>
                     );
@@ -1377,8 +1038,8 @@ function AppContent() {
               </motion.div>
             )}
 
-            {activeView === "settings" && (
-              <motion.div
+            {activeView === 'settings' && (
+              <motion.div 
                 key="settings"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1386,41 +1047,31 @@ function AppContent() {
                 className="max-w-4xl mx-auto space-y-12"
               >
                 <div>
-                  <h2 className="text-4xl font-bold tracking-tighter">
-                    Settings
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Configure your financial workspace.
-                  </p>
+                  <h2 className="text-4xl font-bold tracking-tighter">Settings</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Configure your financial workspace.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="bg-card border border-border rounded-3xl p-8 shadow-sm space-y-8">
                     <div className="space-y-2">
-                      <h3 className="text-lg font-bold tracking-tight">
-                        Financial Accounts
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Manage your banks and digital wallets.
-                      </p>
+                      <h3 className="text-lg font-bold tracking-tight">Financial Accounts</h3>
+                      <p className="text-xs text-muted-foreground">Manage your banks and digital wallets.</p>
                     </div>
 
                     <div className="space-y-4">
                       <div className="flex gap-2">
-                        <input
-                          type="text"
+                        <input 
+                          type="text" 
                           id="new-account-input-settings"
                           placeholder="Bank name..."
                           className="flex-1 bg-muted/50 border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20"
                         />
-                        <button
+                        <button 
                           onClick={() => {
-                            const input = document.getElementById(
-                              "new-account-input-settings"
-                            ) as HTMLInputElement;
+                            const input = document.getElementById('new-account-input-settings') as HTMLInputElement;
                             if (input.value) {
                               handleAddAccount(input.value);
-                              input.value = "";
+                              input.value = '';
                             }
                           }}
                           className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-500/10"
@@ -1428,23 +1079,18 @@ function AppContent() {
                           Add
                         </button>
                       </div>
-
+                      
                       <div className="space-y-2">
-                        {accounts.map((acc) => (
-                          <div
-                            key={acc.id}
-                            className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50 group hover:border-emerald-500/30 transition-colors"
-                          >
+                        {accounts.map(acc => (
+                          <div key={acc.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50 group hover:border-emerald-500/30 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
                                 <CreditCard className="w-4 h-4 text-emerald-500" />
                               </div>
-                              <span className="text-sm font-bold">
-                                {acc.name}
-                              </span>
+                              <span className="text-sm font-bold">{acc.name}</span>
                             </div>
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                              {acc.id === "1" ? "Primary" : "Secondary"}
+                              {acc.id === '1' ? 'Primary' : 'Secondary'}
                             </span>
                           </div>
                         ))}
@@ -1454,35 +1100,25 @@ function AppContent() {
 
                   <div className="bg-card border border-border rounded-3xl p-8 shadow-sm space-y-8">
                     <div className="space-y-2">
-                      <h3 className="text-lg font-bold tracking-tight">
-                        Preferences
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Personalize your dashboard experience.
-                      </p>
+                      <h3 className="text-lg font-bold tracking-tight">Preferences</h3>
+                      <p className="text-xs text-muted-foreground">Personalize your dashboard experience.</p>
                     </div>
 
                     <div className="space-y-6">
                       <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
                         <div>
                           <p className="text-sm font-bold">Display Theme</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                            Light / Dark Mode
-                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Light / Dark Mode</p>
                         </div>
                         <ThemeToggle />
                       </div>
-
+                      
                       <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
                         <div>
                           <p className="text-sm font-bold">Currency Symbol</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                            Default: INR
-                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Default: INR</p>
                         </div>
-                        <span className="px-3 py-1 bg-muted rounded-lg font-mono font-bold text-xs">
-                          ₹
-                        </span>
+                        <span className="px-3 py-1 bg-muted rounded-lg font-mono font-bold text-xs">₹</span>
                       </div>
 
                       <div className="pt-6 border-t border-border">
@@ -1502,18 +1138,10 @@ function AppContent() {
                       <div className="p-2 bg-emerald-500/10 rounded-xl">
                         <FileUp className="w-5 h-5 text-emerald-500" />
                       </div>
-                      <h3 className="text-xl font-bold tracking-tight">
-                        Bulk Import
-                      </h3>
+                      <h3 className="text-xl font-bold tracking-tight">Bulk Import</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Import transactions from Excel or CSV files directly into
-                      your selected account.
-                    </p>
-                    <ExcelImport
-                      onImport={() => {}}
-                      accountId={selectedAccountId}
-                    />
+                    <p className="text-xs text-muted-foreground">Import transactions from Excel or CSV files directly into your selected account.</p>
+                    <ExcelImport onImport={() => {}} accountId={selectedAccountId} />
                   </div>
                 </div>
               </motion.div>
@@ -1525,44 +1153,20 @@ function AppContent() {
       {/* Mobile Navigation - Floating Island Style */}
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg z-[100]">
         <nav className="bg-card/90 backdrop-blur-2xl border border-border h-16 rounded-2xl flex items-center justify-between px-2 shadow-2xl shadow-black/50">
-          <MobileNavItem
-            icon={<LayoutDashboard className="w-5 h-5" />}
-            active={activeView === "dashboard"}
-            onClick={() => setActiveView("dashboard")}
-          />
-          <MobileNavItem
-            icon={<CreditCard className="w-5 h-5" />}
-            active={activeView === "accounts"}
-            onClick={() => setActiveView("accounts")}
-          />
-          <MobileNavItem
-            icon={<History className="w-5 h-5" />}
-            active={activeView === "transactions"}
-            onClick={() => setActiveView("transactions")}
-          />
-
-          <button
+          <MobileNavItem icon={<LayoutDashboard className="w-5 h-5" />} active={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')} />
+          <MobileNavItem icon={<CreditCard className="w-5 h-5" />} active={activeView === 'accounts'} onClick={() => setActiveView('accounts')} />
+          <MobileNavItem icon={<History className="w-5 h-5" />} active={activeView === 'transactions'} onClick={() => setActiveView('transactions')} />
+          
+          <button 
             onClick={() => setShowForm(true)}
             className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white -translate-y-6 shadow-xl shadow-emerald-500/40 active:scale-90 transition-transform shrink-0"
           >
             <Plus className="w-6 h-6" />
           </button>
 
-          <MobileNavItem
-            icon={<CalcIcon className="w-5 h-5" />}
-            active={activeView === "planning"}
-            onClick={() => setActiveView("planning")}
-          />
-          <MobileNavItem
-            icon={<Tags className="w-5 h-5" />}
-            active={activeView === "categories"}
-            onClick={() => setActiveView("categories")}
-          />
-          <MobileNavItem
-            icon={<Settings className="w-5 h-5" />}
-            active={activeView === "settings"}
-            onClick={() => setActiveView("settings")}
-          />
+          <MobileNavItem icon={<CalcIcon className="w-5 h-5" />} active={activeView === 'planning'} onClick={() => setActiveView('planning')} />
+          <MobileNavItem icon={<Tags className="w-5 h-5" />} active={activeView === 'categories'} onClick={() => setActiveView('categories')} />
+          <MobileNavItem icon={<Settings className="w-5 h-5" />} active={activeView === 'settings'} onClick={() => setActiveView('settings')} />
         </nav>
       </div>
 
@@ -1572,24 +1176,22 @@ function AppContent() {
       <AnimatePresence>
         {showForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowForm(false)}
               className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
             />
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-5 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <TransactionForm
-                  onSuccess={() => {
-                    setShowForm(false);
-                  }}
+                <TransactionForm 
+                  onSuccess={() => { setShowForm(false); }} 
                   categories={categories}
                   accounts={accounts}
                   selectedAccountId={selectedAccountId}
@@ -1604,50 +1206,37 @@ function AppContent() {
       <AnimatePresence>
         {showTransfer && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowTransfer(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl md:text-2xl font-bold tracking-tighter text-foreground">
-                  Transfer Money
-                </h3>
-                <button
-                  onClick={() => setShowTransfer(false)}
-                  className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
-                >
+                <h3 className="text-xl md:text-2xl font-bold tracking-tighter text-foreground">Transfer Money</h3>
+                <button onClick={() => setShowTransfer(false)} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    From Account
-                  </label>
-                  <select
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">From Account</label>
+                  <select 
                     value={transferData.from}
-                    onChange={(e) =>
-                      setTransferData({ ...transferData, from: e.target.value })
-                    }
+                    onChange={(e) => setTransferData({ ...transferData, from: e.target.value })}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   >
-                    <option value="" className="bg-card">
-                      Select Source...
-                    </option>
-                    {accountBalances.map((acc) => (
-                      <option key={acc.id} value={acc.id} className="bg-card">
-                        {acc.name} (₹{acc.balance.toLocaleString()})
-                      </option>
+                    <option value="" className="bg-card">Select Source...</option>
+                    {accountBalances.map(acc => (
+                      <option key={acc.id} value={acc.id} className="bg-card">{acc.name} (₹{acc.balance.toLocaleString()})</option>
                     ))}
                   </select>
                 </div>
@@ -1659,69 +1248,45 @@ function AppContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    To Account
-                  </label>
-                  <select
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">To Account</label>
+                  <select 
                     value={transferData.to}
-                    onChange={(e) =>
-                      setTransferData({ ...transferData, to: e.target.value })
-                    }
+                    onChange={(e) => setTransferData({ ...transferData, to: e.target.value })}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   >
-                    <option value="" className="bg-card">
-                      Select Destination...
-                    </option>
-                    {accountBalances.map((acc) => (
-                      <option key={acc.id} value={acc.id} className="bg-card">
-                        {acc.name} (₹{acc.balance.toLocaleString()})
-                      </option>
+                    <option value="" className="bg-card">Select Destination...</option>
+                    {accountBalances.map(acc => (
+                      <option key={acc.id} value={acc.id} className="bg-card">{acc.name} (₹{acc.balance.toLocaleString()})</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Amount
-                  </label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Amount</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
+                    <input 
+                      type="number" 
                       placeholder="0.00"
                       value={transferData.amount}
-                      onChange={(e) =>
-                        setTransferData({
-                          ...transferData,
-                          amount: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
                       className="w-full bg-muted/50 border border-border rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors font-mono text-foreground"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Note (Optional)
-                  </label>
-                  <input
-                    type="text"
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Note (Optional)</label>
+                  <input 
+                    type="text" 
                     placeholder="What's this for?"
                     value={transferData.description}
-                    onChange={(e) =>
-                      setTransferData({
-                        ...transferData,
-                        description: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
                   />
                 </div>
 
-                <button
+                <button 
                   onClick={handleTransfer}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/20 mt-4"
                 >
@@ -1741,12 +1306,8 @@ function AppContent() {
               <div className="absolute inset-0 w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold tracking-[0.2em] text-emerald-500 uppercase mb-2">
-                Synchronizing
-              </p>
-              <p className="text-[10px] text-muted-foreground font-medium">
-                Accessing secure financial records...
-              </p>
+              <p className="text-sm font-bold tracking-[0.2em] text-emerald-500 uppercase mb-2">Synchronizing</p>
+              <p className="text-[10px] text-muted-foreground font-medium">Accessing secure financial records...</p>
             </div>
           </div>
         </div>
@@ -1755,36 +1316,22 @@ function AppContent() {
   );
 }
 
-function NavItem({
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function NavItem({ icon, label, active, onClick }: { icon: ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button
+    <button 
       onClick={onClick}
       className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all duration-300 group relative ${
-        active
-          ? "bg-emerald-500/10 text-emerald-500 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.1)]"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        active 
+          ? 'bg-emerald-500/10 text-emerald-500 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.1)]' 
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
       }`}
     >
-      <div
-        className={`transition-transform duration-500 ${
-          active ? "scale-110" : "group-hover:scale-110"
-        }`}
-      >
+      <div className={`transition-transform duration-500 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
         {icon}
       </div>
       <span className="hidden lg:block tracking-tight">{label}</span>
       {active && (
-        <motion.div
+        <motion.div 
           layoutId="nav-active"
           className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-r-full"
         />
@@ -1793,68 +1340,34 @@ function NavItem({
   );
 }
 
-function MobileNavItem({
-  icon,
-  active,
-  onClick,
-}: {
-  icon: ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
+function MobileNavItem({ icon, active, onClick }: { icon: ReactNode, active: boolean, onClick: () => void }) {
   return (
-    <button
+    <button 
       onClick={onClick}
-      className={`p-2.5 rounded-xl transition-all duration-300 ${
-        active
-          ? "text-emerald-500 bg-emerald-500/10 scale-110"
-          : "text-muted-foreground"
-      }`}
+      className={`p-2.5 rounded-xl transition-all duration-300 ${active ? 'text-emerald-500 bg-emerald-500/10 scale-110' : 'text-muted-foreground'}`}
     >
       {icon}
     </button>
   );
 }
 
-function BalanceCard({
-  label,
-  amount,
-  color,
-  subLabel,
-  highlight,
-}: {
-  label: string;
-  amount: number;
-  color: string;
-  subLabel: string;
-  highlight?: boolean;
-}) {
+function BalanceCard({ label, amount, color, subLabel, highlight }: { label: string, amount: number, color: string, subLabel: string, highlight?: boolean }) {
   return (
-    <div
-      className={`p-8 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden ${
-        highlight
-          ? "bg-emerald-500/5 border-emerald-500/20 shadow-2xl shadow-emerald-500/10"
-          : "bg-card border-border hover:border-emerald-500/30"
-      }`}
-    >
+    <div className={`p-8 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden ${
+      highlight 
+        ? 'bg-emerald-500/5 border-emerald-500/20 shadow-2xl shadow-emerald-500/10' 
+        : 'bg-card border-border hover:border-emerald-500/30'
+    }`}>
       {highlight && (
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
       )}
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">
-        {label}
-      </p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">{label}</p>
       <div className="flex items-baseline gap-2 relative">
         <span className={`text-4xl font-bold tracking-tighter ${color}`}>
-          ₹
-          {amount.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
+          ₹{amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
-      <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-widest opacity-60 relative">
-        {subLabel}
-      </p>
+      <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-widest opacity-60 relative">{subLabel}</p>
     </div>
   );
 }
