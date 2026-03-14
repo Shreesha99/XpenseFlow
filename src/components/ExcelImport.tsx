@@ -2,17 +2,24 @@ import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 import { FileUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { db, auth, collection, addDoc } from "../firebase";
 
 interface ExcelImportProps {
   onImport: () => void;
+  accountId: string;
 }
 
-export default function ExcelImport({ onImport }: ExcelImportProps) {
+export default function ExcelImport({ onImport, accountId }: ExcelImportProps) {
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error', message?: string }>({ type: 'idle' });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
+
+    if (!auth.currentUser) {
+      setStatus({ type: 'error', message: "You must be signed in to import data." });
+      return;
+    }
 
     setStatus({ type: 'loading' });
 
@@ -26,6 +33,9 @@ export default function ExcelImport({ onImport }: ExcelImportProps) {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
+        const uid = auth.currentUser?.uid;
+        if (!uid) throw new Error("User not authenticated");
+
         // Map Excel columns to our format
         // Expecting columns: Title, Amount, Category, Date, Description
         const formattedData = jsonData.map((row: any) => ({
@@ -36,27 +46,22 @@ export default function ExcelImport({ onImport }: ExcelImportProps) {
           category: row.Category || row.category || "Other",
           date: row.Date || row.date || new Date().toISOString().split("T")[0],
           description: row.Description || row.description || "",
+          account_id: accountId,
+          created_at: new Date().toISOString(),
+          uid: uid
         }));
 
-        const response = await fetch("/api/transactions/bulk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formattedData),
-        });
+        await Promise.all(formattedData.map(item => addDoc(collection(db, "transactions"), item)));
 
-        if (response.ok) {
-          setStatus({ type: 'success', message: `Successfully imported ${formattedData.length} expenses!` });
-          onImport();
-        } else {
-          throw new Error("Failed to upload data to server");
-        }
+        setStatus({ type: 'success', message: `Successfully imported ${formattedData.length} expenses!` });
+        onImport();
       } catch (error) {
         console.error("Import error:", error);
-        setStatus({ type: 'error', message: "Failed to parse Excel file. Ensure columns are: Title, Amount, Category, Date" });
+        setStatus({ type: 'error', message: "Failed to parse Excel file or upload to Firestore." });
       }
     };
     reader.readAsBinaryString(file);
-  }, [onImport]);
+  }, [onImport, accountId]);
 
   // @ts-ignore
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

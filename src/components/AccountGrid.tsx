@@ -6,7 +6,7 @@ import { useState } from "react";
 interface AccountGridProps {
   transactions: Transaction[];
   stats: Stats | null;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   compact?: boolean;
 }
 

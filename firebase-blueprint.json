@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "Account": {
+      "title": "Account",
+      "description": "A bank account or wallet",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the bank or wallet" },
+        "logo_url": { "type": "string", "description": "URL to the bank logo" },
+        "balance": { "type": "number", "description": "Current balance in the account" }
+      },
+      "required": ["name"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A transaction category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the category" }
+      },
+      "required": ["name"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the transaction" },
+        "amount": { "type": "number", "description": "Amount of the transaction" },
+        "type": { "type": "string", "enum": ["credit", "expense"], "description": "Type of transaction" },
+        "mode": { "type": "string", "enum": ["digital", "in_hand"], "description": "Mode of transaction" },
+        "category": { "type": "string", "description": "Category name" },
+        "account_id": { "type": "string", "description": "ID of the account" },
+        "date": { "type": "string", "format": "date", "description": "Date of transaction" },
+        "description": { "type": "string", "description": "Optional description" },
+        "created_at": { "type": "string", "format": "date-time", "description": "When the transaction was created" },
+        "uid": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["title", "amount", "type", "mode", "category", "account_id", "date", "created_at"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "Collection of bank accounts"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of transaction categories"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of transactions"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    }
+  }
+}

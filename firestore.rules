@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields:
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - role: string (required, 'admin' or 'user')
+    //
+    // Collection: accounts
+    // Fields:
+    //   - name: string (required)
+    //   - logo_url: string (optional)
+    //   - balance: number (optional)
+    //   - uid: string (required) - Owner ID
+    //
+    // Collection: categories
+    // Fields:
+    //   - name: string (required)
+    //   - uid: string (required) - Owner ID
+    //
+    // Collection: transactions
+    // Fields:
+    //   - title: string (required)
+    //   - amount: number (required)
+    //   - type: string (required, 'credit' or 'expense')
+    //   - mode: string (required, 'digital' or 'in_hand')
+    //   - category: string (required)
+    //   - account_id: string (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - description: string (optional)
+    //   - created_at: timestamp (required)
+    //   - uid: string (required) - Owner ID
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "shreeshavenkatram99@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && 
+                    hasOnlyAllowedFields(['email', 'displayName', 'role']) &&
+                    request.resource.data.role == 'user';
+      allow update: if isAdmin();
+    }
+
+    match /accounts/{accountId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid &&
+                    hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid']) &&
+                    request.resource.data.name is string && request.resource.data.name.size() > 0;
+      allow update: if isDocOwner() && hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid']) &&
+                    request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid &&
+                    hasOnlyAllowedFields(['name', 'uid']) &&
+                    request.resource.data.name is string && request.resource.data.name.size() > 0;
+      allow update: if isDocOwner() && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid &&
+                    hasOnlyAllowedFields(['title', 'amount', 'type', 'mode', 'category', 'account_id', 'date', 'description', 'created_at', 'uid']) &&
+                    request.resource.data.amount is number &&
+                    request.resource.data.type in ['credit', 'expense'] &&
+                    request.resource.data.mode in ['digital', 'in_hand'];
+      allow update: if isDocOwner() && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner();
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}

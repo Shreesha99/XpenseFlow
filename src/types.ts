@@ -1,28 +1,31 @@
 export interface Transaction {
-  id: number;
+  id: string;
   title: string;
   amount: number;
   type: 'credit' | 'expense';
   mode: 'digital' | 'in_hand';
   category: string;
-  account_id: number;
+  account_id: string;
   account_name?: string;
   account_logo_url?: string;
   date: string;
   description?: string;
   created_at: string;
+  uid: string;
 }
 
 export interface Account {
-  id: number;
+  id: string;
   name: string;
   balance?: number;
   logo_url?: string;
+  uid: string;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
+  uid: string;
 }
 
 export interface CategoryStat {

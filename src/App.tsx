@@ -1,16 +1,22 @@
-import { useEffect, useState, ReactNode } from "react";
-import { Wallet, Plus, Calculator as CalcIcon, Tags, LayoutDashboard, History, PieChart, Settings, Search, Filter, ChevronLeft, ChevronRight, CreditCard, Trash2, RotateCcw, X, ArrowRightLeft } from "lucide-react";
-import { Transaction, Stats, Account, Category } from "./types";
+import { useEffect, useState, ReactNode, useMemo } from "react";
+import { Wallet, Plus, Calculator as CalcIcon, Tags, LayoutDashboard, History, PieChart, Settings, Search, Filter, ChevronLeft, ChevronRight, CreditCard, Trash2, RotateCcw, X, ArrowRightLeft, LogIn, LogOut, FileUp } from "lucide-react";
+import { Transaction, Stats, Account, Category, CategoryStat, Summary } from "./types";
 import TransactionForm from "./components/TransactionForm";
 import AccountGrid from "./components/AccountGrid";
 import CategorySummary from "./components/CategorySummary";
 import Calculator from "./components/Calculator";
 import ReportExport from "./components/ReportExport";
+import ExcelImport from "./components/ExcelImport";
 import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import { motion, AnimatePresence } from "motion/react";
-import { format, addMonths, subMonths, startOfMonth } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
+import { 
+  auth, db, signIn, logOut, onAuthStateChanged, 
+  collection, query, where, onSnapshot, orderBy, 
+  addDoc, deleteDoc, doc, updateDoc, Timestamp, User 
+} from "./firebase";
 
 type View = 'dashboard' | 'transactions' | 'planning' | 'categories' | 'settings' | 'accounts';
 
@@ -32,17 +38,23 @@ const INDIAN_BANKS = [
   { name: "Other / Cash", logo: "" }
 ];
 
+function BankLogo({ name, url, className }: { name: string, url?: string, className?: string }) {
+  const bank = INDIAN_BANKS.find(b => b.name === name);
+  const logo = url || bank?.logo;
+  if (!logo) return <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}><CreditCard className="w-4 h-4" /></div>;
+  return <img src={logo} alt={name} className={`rounded-lg object-contain bg-white p-1 ${className}`} referrerPolicy="no-referrer" />;
+}
+
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [accountBalances, setAccountBalances] = useState<{id: number, name: string, balance: number}[]>([]);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   
-  const [selectedAccountId, setSelectedAccountId] = useState<number>(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("0");
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -54,130 +66,180 @@ export default function App() {
     description: ""
   });
 
-  const BankLogo = ({ url, name, className = "w-10 h-10" }: { url?: string, name: string, className?: string }) => {
-    const [error, setError] = useState(false);
-    const firstLetter = name.charAt(0).toUpperCase();
+  // Derived Stats
+  const stats = useMemo<Stats | null>(() => {
+    if (!user) return null;
+    
+    const filteredTransactions = transactions.filter(t => {
+      const date = parseISO(t.date);
+      const matchesMonth = isSameMonth(date, currentMonth);
+      const matchesAccount = selectedAccountId === "0" || t.account_id === selectedAccountId;
+      return matchesMonth && matchesAccount;
+    });
 
-    if (!url || error) {
-      return (
-        <div className={`${className} bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold rounded-xl border border-emerald-500/20`}>
-          {firstLetter}
-        </div>
-      );
-    }
+    const categoryMap = new Map<string, CategoryStat>();
+    const summary: Summary = {
+      digital_credits: 0,
+      in_hand_credits: 0,
+      digital_expenses: 0,
+      in_hand_expenses: 0
+    };
 
-    return (
-      <img 
-        src={url} 
-        alt={name} 
-        className={`${className} object-contain bg-white p-1 rounded-xl border border-border`}
-        referrerPolicy="no-referrer"
-        onError={() => setError(true)}
-      />
-    );
-  };
+    filteredTransactions.forEach(t => {
+      let catStat = categoryMap.get(t.category) || {
+        category: t.category,
+        digital_expense: 0,
+        in_hand_expense: 0,
+        total_expense: 0,
+        digital_credit: 0,
+        in_hand_credit: 0,
+        total_credit: 0
+      };
 
-  const fetchData = async () => {
-    try {
-      const monthStr = format(currentMonth, "yyyy-MM");
-      const [transRes, statsRes, accRes, catRes, balRes] = await Promise.all([
-        fetch(`/api/transactions?account_id=${selectedAccountId}&month=${monthStr}`),
-        fetch(`/api/stats?account_id=${selectedAccountId}&month=${monthStr}`),
-        fetch("/api/accounts"),
-        fetch("/api/categories"),
-        fetch("/api/accounts/balances")
-      ]);
-      
-      const [transData, statsData, accData, catData, balData] = await Promise.all([
-        transRes.json(),
-        statsRes.json(),
-        accRes.json(),
-        catRes.json(),
-        balRes.json()
-      ]);
- 
-      setTransactions(Array.isArray(transData) ? transData : []);
-      setStats(statsData);
-      setAccounts(Array.isArray(accData) ? accData : []);
-      setCategories(Array.isArray(catData) ? catData : []);
-      setAccountBalances(Array.isArray(balData) ? balData : []);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (t.type === 'credit') {
+        if (t.mode === 'digital') {
+          catStat.digital_credit += t.amount;
+          summary.digital_credits += t.amount;
+        } else {
+          catStat.in_hand_credit += t.amount;
+          summary.in_hand_credits += t.amount;
+        }
+        catStat.total_credit += t.amount;
+      } else {
+        if (t.mode === 'digital') {
+          catStat.digital_expense += t.amount;
+          summary.digital_expenses += t.amount;
+        } else {
+          catStat.in_hand_expense += t.amount;
+          summary.in_hand_expenses += t.amount;
+        }
+        catStat.total_expense += t.amount;
+      }
 
+      categoryMap.set(t.category, catStat);
+    });
+
+    return {
+      categoryStats: Array.from(categoryMap.values()),
+      summary
+    };
+  }, [transactions, currentMonth, selectedAccountId, user]);
+
+  const accountBalances = useMemo(() => {
+    return accounts.map(acc => {
+      const accTransactions = transactions.filter(t => t.account_id === acc.id);
+      const balance = accTransactions.reduce((sum, t) => {
+        return t.type === 'credit' ? sum + t.amount : sum - t.amount;
+      }, 0);
+      return { ...acc, balance };
+    });
+  }, [accounts, transactions]);
+
+  // Auth Listener
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) {
+        setTransactions([]);
+        setAccounts([]);
+        setCategories([]);
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
+  // Data Listeners
   useEffect(() => {
-    fetchData();
-  }, [selectedAccountId, currentMonth]);
+    if (!user) return;
 
-  useEffect(() => {
-    if (activeView === 'accounts') {
-      fetchData();
-    }
-  }, [activeView]);
+    setLoading(true);
 
-  const handleDelete = async (id: number) => {
+    const qTransactions = query(
+      collection(db, "transactions"),
+      where("uid", "==", user.uid),
+      orderBy("date", "desc")
+    );
+
+    const qAccounts = query(
+      collection(db, "accounts"),
+      where("uid", "==", user.uid)
+    );
+
+    const qCategories = query(
+      collection(db, "categories"),
+      where("uid", "==", user.uid)
+    );
+
+    const unsubTrans = onSnapshot(qTransactions, (snapshot) => {
+      const trans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+      setTransactions(trans);
+      setLoading(false);
+    });
+
+    const unsubAcc = onSnapshot(qAccounts, (snapshot) => {
+      const accs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+      setAccounts(accs);
+    });
+
+    const unsubCat = onSnapshot(qCategories, (snapshot) => {
+      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      setCategories(cats);
+    });
+
+    return () => {
+      unsubTrans();
+      unsubAcc();
+      unsubCat();
+    };
+  }, [user]);
+
+  const handleDelete = async (id: string) => {
+    if (!user) return;
     try {
-      const response = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
-      if (response.ok) {
-        fetchData();
-      }
+      await deleteDoc(doc(db, "transactions", id));
     } catch (error) {
       console.error("Failed to delete transaction:", error);
     }
   };
 
   const handleAddCategory = async (name: string) => {
+    if (!user) return;
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name })
+      await addDoc(collection(db, "categories"), {
+        name,
+        uid: user.uid
       });
-      if (res.ok) fetchData();
     } catch (error) {
       console.error("Failed to add category:", error);
     }
   };
 
-  const handleEditCategory = async (id: number, name: string) => {
+  const handleEditCategory = async (id: string, name: string) => {
+    if (!user) return;
     try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name })
-      });
-      if (res.ok) fetchData();
+      await updateDoc(doc(db, "categories", id), { name });
     } catch (error) {
       console.error("Failed to update category:", error);
     }
   };
 
   const handleAddAccount = async (name: string, logo_url: string = "") => {
+    if (!user) return;
     try {
-      const res = await fetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, logo_url })
+      await addDoc(collection(db, "accounts"), {
+        name,
+        logo_url,
+        uid: user.uid,
+        balance: 0
       });
-      if (res.ok) fetchData();
     } catch (error) {
       console.error("Failed to add account:", error);
     }
   };
 
   const handleTransfer = async () => {
+    if (!user) return;
     if (!transferData.from || !transferData.to || !transferData.amount) {
       alert("Please fill all transfer details.");
       return;
@@ -188,40 +250,54 @@ export default function App() {
     }
 
     try {
-      const res = await fetch("/api/transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from_account_id: parseInt(transferData.from),
-          to_account_id: parseInt(transferData.to),
-          amount: parseFloat(transferData.amount),
-          date: new Date().toISOString().split("T")[0],
-          description: transferData.description
-        })
-      });
+      const amount = parseFloat(transferData.amount);
+      const date = new Date().toISOString().split("T")[0];
+      const createdAt = new Date().toISOString();
 
-      if (res.ok) {
-        setShowTransfer(false);
-        setTransferData({ from: "", to: "", amount: "", description: "" });
-        fetchData();
-      }
+      // Create two transactions for the transfer
+      await Promise.all([
+        addDoc(collection(db, "transactions"), {
+          title: `Transfer to ${accounts.find(a => a.id === transferData.to)?.name}`,
+          amount,
+          type: 'expense',
+          mode: 'digital',
+          category: 'Transfer',
+          account_id: transferData.from,
+          date,
+          description: transferData.description,
+          created_at: createdAt,
+          uid: user.uid
+        }),
+        addDoc(collection(db, "transactions"), {
+          title: `Transfer from ${accounts.find(a => a.id === transferData.from)?.name}`,
+          amount,
+          type: 'credit',
+          mode: 'digital',
+          category: 'Transfer',
+          account_id: transferData.to,
+          date,
+          description: transferData.description,
+          created_at: createdAt,
+          uid: user.uid
+        })
+      ]);
+
+      setShowTransfer(false);
+      setTransferData({ from: "", to: "", amount: "", description: "" });
     } catch (error) {
       console.error("Transfer failed:", error);
     }
   };
 
-  const handleDeleteAccount = async (id: number) => {
-    if (id === 1) {
-      alert("Cannot delete the primary account.");
-      return;
-    }
+  const handleDeleteAccount = async (id: string) => {
+    if (!user) return;
     if (!confirm("Are you sure? This will delete all transactions for this bank.")) return;
     try {
-      const res = await fetch(`/api/accounts/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        if (selectedAccountId === id) setSelectedAccountId(0);
-        fetchData();
-      }
+      // Delete transactions associated with this account
+      const accTransactions = transactions.filter(t => t.account_id === id);
+      await Promise.all(accTransactions.map(t => deleteDoc(doc(db, "transactions", t.id))));
+      await deleteDoc(doc(db, "accounts", id));
+      if (selectedAccountId === id) setSelectedAccountId("0");
     } catch (error) {
       console.error("Failed to delete account:", error);
     }
@@ -305,11 +381,11 @@ export default function App() {
             <div className="space-y-1">
               <button
                 onClick={() => {
-                  setSelectedAccountId(0);
+                  setSelectedAccountId("0");
                   setActiveView('dashboard');
                 }}
                 className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedAccountId === 0 
+                  selectedAccountId === "0" 
                     ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
                 }`}
@@ -342,10 +418,23 @@ export default function App() {
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Theme</span>
               <ThemeToggle />
             </div>
-            <button className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-muted-foreground hover:text-foreground transition-colors text-sm rounded-xl hover:bg-muted">
-              <Settings className="w-5 h-5" />
-              <span className="hidden lg:block">Settings</span>
-            </button>
+            {user ? (
+              <button 
+                onClick={logOut}
+                className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-muted-foreground hover:text-rose-500 transition-colors text-sm rounded-xl hover:bg-rose-500/10"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="hidden lg:block">Logout</span>
+              </button>
+            ) : (
+              <button 
+                onClick={signIn}
+                className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-emerald-500 hover:text-emerald-400 transition-colors text-sm rounded-xl hover:bg-emerald-500/10"
+              >
+                <LogIn className="w-5 h-5" />
+                <span className="hidden lg:block">Login</span>
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -413,34 +502,48 @@ export default function App() {
                       Financial <br /> 
                       <span className="text-emerald-500">Intelligence.</span>
                     </p>
-                    <div className="flex flex-wrap gap-8 md:gap-12 mt-12">
-                      <div className="space-y-1 flex items-center gap-4">
-                        {selectedAccountId !== 0 && accountBalances.find(a => a.id === selectedAccountId) && (
-                          <BankLogo 
-                            url={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
-                            name={accountBalances.find(a => a.id === selectedAccountId)?.name || ""} 
-                            className="w-12 h-12 md:w-16 md:h-16"
-                          />
-                        )}
-                        <div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
-                          <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    {!user ? (
+                      <div className="bg-card border border-border p-8 rounded-3xl text-center space-y-4 shadow-2xl">
+                        <Wallet className="w-12 h-12 text-emerald-500 mx-auto" />
+                        <h3 className="text-xl font-bold">Connect your wallet</h3>
+                        <p className="text-sm text-muted-foreground">Sign in to start tracking your expenses across all your bank accounts.</p>
+                        <button 
+                          onClick={signIn}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20"
+                        >
+                          Sign in with Google
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-8 md:gap-12 mt-12">
+                        <div className="space-y-1 flex items-center gap-4">
+                          {selectedAccountId !== "0" && accountBalances.find(a => a.id === selectedAccountId) && (
+                            <BankLogo 
+                              url={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
+                              name={accountBalances.find(a => a.id === selectedAccountId)?.name || ""} 
+                              className="w-12 h-12 md:w-16 md:h-16"
+                            />
+                          )}
+                          <div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
+                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                          </div>
+                        </div>
+                        <div className="w-px h-12 bg-border hidden sm:block" />
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Income</p>
+                          <p className="text-2xl font-bold tracking-tighter text-emerald-500">₹{totalCredits.toLocaleString()}</p>
+                        </div>
+                        <div className="w-px h-12 bg-border hidden sm:block" />
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Outflow</p>
+                          <p className="text-2xl font-bold tracking-tighter text-rose-500">₹{totalExpenses.toLocaleString()}</p>
                         </div>
                       </div>
-                      <div className="w-px h-12 bg-border hidden sm:block" />
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Income</p>
-                        <p className="text-2xl font-bold tracking-tighter text-emerald-500">₹{totalCredits.toLocaleString()}</p>
-                      </div>
-                      <div className="w-px h-12 bg-border hidden sm:block" />
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Outflow</p>
-                        <p className="text-2xl font-bold tracking-tighter text-rose-500">₹{totalExpenses.toLocaleString()}</p>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Bank Balances Widget */}
-                    {selectedAccountId === 0 && accountBalances.length > 0 && (
+                    {user && selectedAccountId === "0" && accountBalances.length > 0 && (
                       <div className="mt-12 pt-12 border-t border-border">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Bank Breakdown</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -518,7 +621,7 @@ export default function App() {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button 
-                      onClick={() => fetchData()}
+                      onClick={() => {}}
                       className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -897,6 +1000,17 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="bg-card border border-border rounded-3xl p-8 shadow-sm space-y-8 md:col-span-2">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-emerald-500/10 rounded-xl">
+                        <FileUp className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <h3 className="text-xl font-bold tracking-tight">Bulk Import</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Import transactions from Excel or CSV files directly into your selected account.</p>
+                    <ExcelImport onImport={() => {}} accountId={selectedAccountId} />
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -937,11 +1051,11 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-card border border-border rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="p-8">
+              <div className="p-5 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <TransactionForm 
-                  onSuccess={() => { fetchData(); setShowForm(false); }} 
+                  onSuccess={() => { setShowForm(false); }} 
                   categories={categories}
                   accounts={accounts}
                   selectedAccountId={selectedAccountId}
