@@ -115,7 +115,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 rounded-2xl p-4 space-y-3">
+              <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-500">
                   <Info className="w-4 h-4" />
                   <span className="text-[10px] font-bold uppercase tracking-wider">Quick Guide</span>
@@ -161,11 +161,11 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
           <div className="flex items-center justify-between px-1">
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Transaction Type</label>
           </div>
-          <div className="flex gap-2 p-1 bg-muted border border-border rounded-2xl">
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'credit' })}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.type === 'credit' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.type === 'credit' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800'}`}
             >
               <ArrowUpCircle className="w-4 h-4" />
               Credit
@@ -173,7 +173,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'expense' })}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.type === 'expense' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-[1.02]' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.type === 'expense' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20 scale-[1.02]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800'}`}
             >
               <ArrowDownCircle className="w-4 h-4" />
               Expense
@@ -185,11 +185,11 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
           <div className="flex items-center justify-between px-1">
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Payment Mode</label>
           </div>
-          <div className="flex gap-2 p-1 bg-muted border border-border rounded-2xl">
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, mode: 'digital' })}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.mode === 'digital' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.mode === 'digital' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800'}`}
             >
               <Smartphone className="w-4 h-4" />
               Digital
@@ -197,7 +197,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             <button
               type="button"
               onClick={() => setFormData({ ...formData, mode: 'in_hand' })}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.mode === 'in_hand' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${formData.mode === 'in_hand' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800'}`}
             >
               <Banknote className="w-4 h-4" />
               Cash
@@ -214,21 +214,21 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full p-4 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-muted-foreground/40"
+            className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
             placeholder="e.g. Monthly Salary"
           />
         </div>
         <div className="space-y-2">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Amount (INR)</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">₹</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold text-sm">₹</span>
             <input
               required
               type="number"
               step="0.01"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="w-full p-4 pl-10 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-muted-foreground/40"
+              className="w-full p-4 pl-10 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
               placeholder="0.00"
             />
           </div>
@@ -239,7 +239,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
+              className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
             >
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.name} className="bg-card">
@@ -256,7 +256,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             <select
               value={formData.account_id}
               onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
+              className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id} className="bg-card">
@@ -274,7 +274,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="w-full p-4 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
+            className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
           />
         </div>
         <div className="space-y-2">
@@ -283,7 +283,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             type="text"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full p-4 rounded-2xl bg-background border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-muted-foreground/40"
+            className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
             placeholder="Add context..."
           />
         </div>

@@ -1045,13 +1045,13 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowForm(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-card border border-border rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-5 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <TransactionForm 
