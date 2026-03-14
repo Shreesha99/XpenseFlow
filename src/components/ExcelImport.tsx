@@ -44,7 +44,11 @@ export default function ExcelImport({ onImport, accountId }: ExcelImportProps) {
           type: (row.Type || row.type || "expense").toLowerCase(),
           mode: (row.Mode || row.mode || "digital").toLowerCase(),
           category: row.Category || row.category || "Other",
-          date: row.Date || row.date || new Date().toISOString().split("T")[0],
+          date: (row.Date || row.date) 
+            ? (typeof (row.Date || row.date) === 'string' 
+                ? (row.Date || row.date) 
+                : new Date(row.Date || row.date).toISOString().slice(0, 10)) 
+            : new Date().toISOString().slice(0, 10),
           description: row.Description || row.description || "",
           account_id: accountId,
           created_at: new Date().toISOString(),

@@ -19,7 +19,7 @@ export default function ReportExport({ transactions }: ReportExportProps) {
     doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 30);
 
     const tableData = transactions.map(t => [
-      format(new Date(t.date), "dd MMM yyyy"),
+      t.date ? format(new Date(t.date), "dd MMM yyyy") : '—',
       t.title,
       t.type.toUpperCase(),
       t.mode.toUpperCase(),

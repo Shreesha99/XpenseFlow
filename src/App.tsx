@@ -9,6 +9,7 @@ import ReportExport from "./components/ReportExport";
 import ExcelImport from "./components/ExcelImport";
 import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
@@ -46,6 +47,14 @@ function BankLogo({ name, url, className }: { name: string, url?: string, classN
 }
 
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}
+
+function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -78,7 +87,7 @@ export default function App() {
     if (!user) return [];
     
     return transactions.filter(t => {
-      const date = parseISO(t.date);
+      const date = parseISO(String(t.date));
       let matchesTime = false;
       
       if (filterMode === 'day') {
@@ -112,7 +121,7 @@ export default function App() {
   const filteredAccountBalances = useMemo(() => {
     return accounts.map(acc => {
       const accTransactions = transactions.filter(t => {
-        const date = parseISO(t.date);
+        const date = parseISO(String(t.date));
         return date <= endOfPeriod && t.account_id === acc.id;
       });
       const balance = accTransactions.reduce((sum, t) => {
@@ -300,7 +309,7 @@ export default function App() {
 
     try {
       const amount = parseFloat(transferData.amount);
-      const date = new Date().toISOString().split("T")[0];
+      const date = new Date().toISOString().slice(0, 10);
       const createdAt = new Date().toISOString();
 
       // Create two transactions for the transfer
@@ -1081,7 +1090,7 @@ export default function App() {
                               <span className="text-sm font-bold">{acc.name}</span>
                             </div>
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                              {acc.id === 1 ? 'Primary' : 'Secondary'}
+                              {acc.id === '1' ? 'Primary' : 'Secondary'}
                             </span>
                           </div>
                         ))}

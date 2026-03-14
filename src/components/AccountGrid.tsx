@@ -83,7 +83,7 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
           <tbody className="divide-y divide-border">
             {transactions.map((t) => (
               <tr key={t.id} className="group hover:bg-emerald-500/[0.02] transition-colors">
-                <td className="p-5 text-muted-foreground font-mono">{format(new Date(t.date), "dd.MM.yy")}</td>
+                <td className="p-5 text-muted-foreground font-mono">{t.date ? format(new Date(t.date), "dd.MM.yy") : '—'}</td>
                 <td className="p-5">
                   {t.type === 'credit' ? (
                     <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
                 <div className={`w-2 h-2 rounded-full ${t.type === 'credit' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                 <div>
                   <p className="text-sm font-bold text-foreground">{t.title}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono">{format(new Date(t.date), "dd MMM yyyy")}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">{t.date ? format(new Date(t.date), "dd MMM yyyy") : '—'}</p>
                 </div>
               </div>
               <button 
