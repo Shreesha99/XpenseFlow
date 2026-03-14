@@ -1,33 +1,58 @@
-import * as React from 'react';
+import * as React from "react";
 
-export default class ErrorBoundary extends React.Component<any, any> {
-  constructor(props: any) {
+interface Props {
+  children: React.ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export default class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    (this as any).state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error) {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught an error', error, errorInfo);
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
   }
 
-  render() {
-    const { hasError, error } = (this as any).state;
-    if (hasError) {
+  public render() {
+    if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="max-w-md w-full bg-card border border-border p-8 rounded-3xl shadow-2xl text-center space-y-6">
-            <h1 className="text-2xl font-bold text-foreground">Application Error</h1>
-            <p className="text-muted-foreground text-sm">{error?.message}</p>
-            <button onClick={() => window.location.reload()} className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold">Reload</button>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center space-y-6">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
+              <p className="text-muted-foreground">
+                An unexpected error occurred. Please try refreshing the page.
+              </p>
+            </div>
+            {this.state.error && (
+              <pre className="text-left bg-muted p-4 rounded-xl text-xs overflow-auto max-h-40 font-mono text-muted-foreground">
+                {this.state.error.message}
+              </pre>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-foreground text-background rounded-2xl font-bold hover:opacity-90 transition-opacity"
+            >
+              Refresh Page
+            </button>
           </div>
         </div>
       );
     }
 
-    return (this as any).props.children;
+    return this.props.children;
   }
 }

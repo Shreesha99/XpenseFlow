@@ -22,7 +22,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
     mode: "digital" as "digital" | "in_hand",
     category: "",
     account_id: selectedAccountId,
-    date: new Date().toISOString().split("T")[0],
+    date: new Date().toISOString().slice(0, 10),
     description: "",
   });
 
@@ -77,7 +77,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
         mode: "digital",
         category: categories[0]?.name || "",
         account_id: selectedAccountId,
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toISOString().slice(0, 10),
         description: "",
       });
       onSuccess();
