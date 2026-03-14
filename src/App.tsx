@@ -10,7 +10,7 @@ import ExcelImport from "./components/ExcelImport";
 import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import { motion, AnimatePresence } from "motion/react";
-import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
 import { 
   auth, db, signIn, logOut, onAuthStateChanged, 
@@ -55,7 +55,14 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>("0");
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Date Filtering State
+  const [filterMode, setFilterMode] = useState<'day' | 'month' | 'year' | 'custom'>('month');
+  const [filterDate, setFilterDate] = useState(new Date());
+  const [customRange, setCustomRange] = useState<{start: Date, end: Date}>({
+    start: startOfMonth(new Date()),
+    end: new Date()
+  });
 
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
@@ -66,17 +73,36 @@ export default function App() {
     description: ""
   });
 
+  // Derived Filtered Transactions
+  const filteredTransactions = useMemo(() => {
+    if (!user) return [];
+    
+    return transactions.filter(t => {
+      const date = parseISO(t.date);
+      let matchesTime = false;
+      
+      if (filterMode === 'day') {
+        matchesTime = isSameDay(date, filterDate);
+      } else if (filterMode === 'month') {
+        matchesTime = isSameMonth(date, filterDate);
+      } else if (filterMode === 'year') {
+        matchesTime = isSameYear(date, filterDate);
+      } else if (filterMode === 'custom') {
+        matchesTime = isWithinInterval(date, { 
+          start: startOfDay(customRange.start), 
+          end: endOfDay(customRange.end) 
+        });
+      }
+
+      const matchesAccount = selectedAccountId === "0" || t.account_id === selectedAccountId;
+      return matchesTime && matchesAccount;
+    });
+  }, [transactions, filterMode, filterDate, customRange, selectedAccountId, user]);
+
   // Derived Stats
   const stats = useMemo<Stats | null>(() => {
     if (!user) return null;
     
-    const filteredTransactions = transactions.filter(t => {
-      const date = parseISO(t.date);
-      const matchesMonth = isSameMonth(date, currentMonth);
-      const matchesAccount = selectedAccountId === "0" || t.account_id === selectedAccountId;
-      return matchesMonth && matchesAccount;
-    });
-
     const categoryMap = new Map<string, CategoryStat>();
     const summary: Summary = {
       digital_credits: 0,
@@ -123,7 +149,7 @@ export default function App() {
       categoryStats: Array.from(categoryMap.values()),
       summary
     };
-  }, [transactions, currentMonth, selectedAccountId, user]);
+  }, [filteredTransactions, user]);
 
   const accountBalances = useMemo(() => {
     return accounts.map(acc => {
@@ -312,7 +338,13 @@ export default function App() {
 
   const totalCredits = (Number(summary.digital_credits) || 0) + (Number(summary.in_hand_credits) || 0);
   const totalExpenses = (Number(summary.digital_expenses) || 0) + (Number(summary.in_hand_expenses) || 0);
-  const totalBalance = totalCredits - totalExpenses;
+  
+  const actualCurrentBalance = useMemo(() => {
+    if (selectedAccountId === "0") {
+      return accountBalances.reduce((sum, acc) => sum + acc.balance, 0);
+    }
+    return accountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
+  }, [accountBalances, selectedAccountId]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans selection:bg-emerald-500/30">
@@ -443,22 +475,70 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 md:h-20 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-2 md:gap-8 flex-1">
-            <div className="flex items-center gap-1 md:gap-2 bg-muted/50 border border-border rounded-xl p-0.5 md:p-1">
-              <button 
-                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <ChevronLeft className="w-3.5 h-3.5 md:w-4 h-4" />
-              </button>
-              <span className="text-xs md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight">
-                {format(currentMonth, "MMM yyyy")}
-              </span>
-              <button 
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <ChevronRight className="w-3.5 h-3.5 md:w-4 h-4" />
-              </button>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5">
+                {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setFilterMode(mode)}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                      filterMode === mode 
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 md:gap-2 bg-muted/50 border border-border rounded-xl p-0.5 md:p-1">
+                {filterMode !== 'custom' ? (
+                  <>
+                    <button 
+                      onClick={() => {
+                        if (filterMode === 'day') setFilterDate(subDays(filterDate, 1));
+                        if (filterMode === 'month') setFilterDate(subMonths(filterDate, 1));
+                        if (filterMode === 'year') setFilterDate(subYears(filterDate, 1));
+                      }}
+                      className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5 md:w-4 h-4" />
+                    </button>
+                    <span className="text-xs md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight">
+                      {filterMode === 'day' && format(filterDate, "dd MMM yyyy")}
+                      {filterMode === 'month' && format(filterDate, "MMMM yyyy")}
+                      {filterMode === 'year' && format(filterDate, "yyyy")}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        if (filterMode === 'day') setFilterDate(addDays(filterDate, 1));
+                        if (filterMode === 'month') setFilterDate(addMonths(filterDate, 1));
+                        if (filterMode === 'year') setFilterDate(addYears(filterDate, 1));
+                      }}
+                      className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5 md:w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 px-2 py-1">
+                    <input 
+                      type="date" 
+                      value={format(customRange.start, "yyyy-MM-dd")}
+                      onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
+                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none"
+                    />
+                    <span className="text-muted-foreground text-[10px]">to</span>
+                    <input 
+                      type="date" 
+                      value={format(customRange.end, "yyyy-MM-dd")}
+                      onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
+                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="relative max-w-md w-full hidden md:block">
@@ -472,7 +552,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <ReportExport transactions={transactions} />
+            <ReportExport transactions={filteredTransactions} />
             <button 
               onClick={() => setShowForm(!showForm)}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
@@ -526,7 +606,7 @@ export default function App() {
                           )}
                           <div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
-                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                           </div>
                         </div>
                         <div className="w-px h-12 bg-border hidden sm:block" />
@@ -579,7 +659,7 @@ export default function App() {
                       </button>
                     </div>
                     <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-                      <AccountGrid transactions={transactions.slice(0, 8)} stats={stats} onDelete={handleDelete} compact />
+                      <AccountGrid transactions={filteredTransactions.slice(0, 8)} stats={stats} onDelete={handleDelete} compact />
                     </div>
                   </div>
 
@@ -840,7 +920,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-                  <AccountGrid transactions={transactions} stats={stats} onDelete={handleDelete} />
+                  <AccountGrid transactions={filteredTransactions} stats={stats} onDelete={handleDelete} />
                 </div>
               </motion.div>
             )}
