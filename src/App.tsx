@@ -11,6 +11,8 @@ import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import CustomSelect from "./components/CustomSelect";
+import PromptModal from "./components/PromptModal";
+import ConfirmationModal from "./components/ConfirmationModal";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
@@ -105,6 +107,35 @@ function AppContent() {
     to: "",
     amount: "",
     description: ""
+  });
+
+  // Modal States
+  const [promptConfig, setPromptConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    defaultValue: string;
+    onConfirm: (val: string) => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    defaultValue: "",
+    onConfirm: () => {},
+  });
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
   });
 
   // Derived Filtered Transactions
@@ -342,11 +373,18 @@ function AppContent() {
 
   const handleDelete = async (id: string) => {
     if (!user) return;
-    try {
-      await deleteDoc(doc(db, "transactions", id));
-    } catch (error) {
-      console.error("Failed to delete transaction:", error);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Transaction",
+      message: "Are you sure you want to delete this transaction? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "transactions", id));
+        } catch (error) {
+          console.error("Failed to delete transaction:", error);
+        }
+      }
+    });
   };
 
   const handleAddCategory = async (name: string) => {
@@ -436,15 +474,22 @@ function AppContent() {
 
   const handleDeleteAccount = async (id: string) => {
     if (!user) return;
-    try {
-      // Delete transactions associated with this account
-      const accTransactions = transactions.filter(t => t.account_id === id);
-      await Promise.all(accTransactions.map(t => deleteDoc(doc(db, "transactions", t.id))));
-      await deleteDoc(doc(db, "accounts", id));
-      if (selectedAccountId === id) setSelectedAccountId("0");
-    } catch (error) {
-      console.error("Failed to delete account:", error);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Account",
+      message: "Are you sure you want to delete this account? All associated transactions will also be deleted. This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          // Delete transactions associated with this account
+          const accTransactions = transactions.filter(t => t.account_id === id);
+          await Promise.all(accTransactions.map(t => deleteDoc(doc(db, "transactions", t.id))));
+          await deleteDoc(doc(db, "accounts", id));
+          if (selectedAccountId === id) setSelectedAccountId("0");
+        } catch (error) {
+          console.error("Failed to delete account:", error);
+        }
+      }
+    });
   };
 
   const summary = stats?.summary || {
@@ -522,8 +567,15 @@ function AppContent() {
             <div className="flex items-center justify-between mb-4 px-2">
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Accounts</p>
               <button onClick={() => {
-                const name = window.prompt("Enter account name:");
-                if (name) handleAddAccount(name);
+                setPromptConfig({
+                  isOpen: true,
+                  title: "New Account",
+                  message: "Enter account name:",
+                  defaultValue: "",
+                  onConfirm: (name) => {
+                    if (name && name.trim()) handleAddAccount(name.trim());
+                  }
+                });
               }} className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors">
                 <Plus className="w-3 h-3" />
               </button>
@@ -1147,16 +1199,25 @@ function AppContent() {
                     <h2 className="text-4xl font-bold tracking-tighter">Categories</h2>
                     <p className="text-sm text-muted-foreground mt-1">Organize your finances with custom categories.</p>
                   </div>
-                  <button 
-                    onClick={() => {
-                      const name = window.prompt("Enter new category name:");
-                      if (name) handleAddCategory(name);
-                    }}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    New Category
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setPromptConfig({
+                          isOpen: true,
+                          title: "New Category",
+                          message: "Enter category name:",
+                          defaultValue: "",
+                          onConfirm: (name) => {
+                            if (name && name.trim()) handleAddCategory(name.trim());
+                          }
+                        });
+                      }}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Category
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                   {categories.map(cat => {
@@ -1170,8 +1231,17 @@ function AppContent() {
                           </div>
                           <button 
                             onClick={() => {
-                              const name = window.prompt("Edit category name:", cat.name);
-                              if (name) handleEditCategory(cat.id, name);
+                              setPromptConfig({
+                                isOpen: true,
+                                title: "Edit Category",
+                                message: "Enter new category name:",
+                                defaultValue: cat.name,
+                                onConfirm: async (name) => {
+                                  if (name && name.trim()) {
+                                    handleEditCategory(cat.id, name.trim());
+                                  }
+                                }
+                              });
                             }}
                             className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
                           >
@@ -1333,6 +1403,25 @@ function AppContent() {
       </div>
 
       <FloatingCalculator />
+
+      <PromptModal 
+        isOpen={promptConfig.isOpen}
+        onClose={() => setPromptConfig({ ...promptConfig, isOpen: false })}
+        onConfirm={promptConfig.onConfirm}
+        title={promptConfig.title}
+        message={promptConfig.message}
+        defaultValue={promptConfig.defaultValue}
+      />
+
+      <ConfirmationModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
+      />
 
       {/* Transaction Form Modal */}
       <AnimatePresence>
