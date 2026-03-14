@@ -10,7 +10,7 @@ import ExcelImport from "./components/ExcelImport";
 import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import { motion, AnimatePresence } from "motion/react";
-import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
 import { 
   auth, db, signIn, logOut, onAuthStateChanged, 
@@ -98,6 +98,29 @@ export default function App() {
       return matchesTime && matchesAccount;
     });
   }, [transactions, filterMode, filterDate, customRange, selectedAccountId, user]);
+
+  // End of period for balance snapshot
+  const endOfPeriod = useMemo(() => {
+    if (filterMode === 'day') return endOfDay(filterDate);
+    if (filterMode === 'month') return endOfMonth(filterDate);
+    if (filterMode === 'year') return endOfYear(filterDate);
+    if (filterMode === 'custom') return endOfDay(customRange.end);
+    return new Date();
+  }, [filterMode, filterDate, customRange]);
+
+  // Filtered Account Balances (Snapshot at end of period)
+  const filteredAccountBalances = useMemo(() => {
+    return accounts.map(acc => {
+      const accTransactions = transactions.filter(t => {
+        const date = parseISO(t.date);
+        return date <= endOfPeriod && t.account_id === acc.id;
+      });
+      const balance = accTransactions.reduce((sum, t) => {
+        return t.type === 'credit' ? sum + t.amount : sum - t.amount;
+      }, 0);
+      return { ...acc, balance };
+    });
+  }, [accounts, transactions, endOfPeriod]);
 
   // Derived Stats
   const stats = useMemo<Stats | null>(() => {
@@ -341,10 +364,10 @@ export default function App() {
   
   const actualCurrentBalance = useMemo(() => {
     if (selectedAccountId === "0") {
-      return accountBalances.reduce((sum, acc) => sum + acc.balance, 0);
+      return filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0);
     }
-    return accountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
-  }, [accountBalances, selectedAccountId]);
+    return filteredAccountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
+  }, [filteredAccountBalances, selectedAccountId]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans selection:bg-emerald-500/30">
@@ -473,15 +496,16 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 md:h-20 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
-          <div className="flex items-center gap-2 md:gap-8 flex-1">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5">
+        <header className="min-h-[4rem] border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-3 px-4 md:px-8">
+          <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+              {/* Filter Modes */}
+              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
                 {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setFilterMode(mode)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
                       filterMode === mode 
                         ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' 
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -492,7 +516,8 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-1 md:gap-2 bg-muted/50 border border-border rounded-xl p-0.5 md:p-1">
+              {/* Date Switcher */}
+              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1 w-full sm:w-auto justify-between sm:justify-start">
                 {filterMode !== 'custom' ? (
                   <>
                     <button 
@@ -501,13 +526,13 @@ export default function App() {
                         if (filterMode === 'month') setFilterDate(subMonths(filterDate, 1));
                         if (filterMode === 'year') setFilterDate(subYears(filterDate, 1));
                       }}
-                      className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
-                      <ChevronLeft className="w-3.5 h-3.5 md:w-4 h-4" />
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-xs md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight">
-                      {filterMode === 'day' && format(filterDate, "dd MMM yyyy")}
-                      {filterMode === 'month' && format(filterDate, "MMMM yyyy")}
+                    <span className="text-[11px] md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight truncate">
+                      {filterMode === 'day' && format(filterDate, "dd MMM yy")}
+                      {filterMode === 'month' && format(filterDate, "MMM yyyy")}
                       {filterMode === 'year' && format(filterDate, "yyyy")}
                     </span>
                     <button 
@@ -516,9 +541,9 @@ export default function App() {
                         if (filterMode === 'month') setFilterDate(addMonths(filterDate, 1));
                         if (filterMode === 'year') setFilterDate(addYears(filterDate, 1));
                       }}
-                      className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
-                      <ChevronRight className="w-3.5 h-3.5 md:w-4 h-4" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
@@ -527,39 +552,41 @@ export default function App() {
                       type="date" 
                       value={format(customRange.start, "yyyy-MM-dd")}
                       onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
-                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none"
+                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
                     />
-                    <span className="text-muted-foreground text-[10px]">to</span>
+                    <span className="text-muted-foreground text-[10px]">→</span>
                     <input 
                       type="date" 
                       value={format(customRange.end, "yyyy-MM-dd")}
                       onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
-                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none"
+                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
                     />
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="relative max-w-md w-full hidden md:block">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Search transactions, categories..." 
-                className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
-              />
+            <div className="flex items-center gap-3 w-full lg:flex-1">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input 
+                  type="text" 
+                  placeholder="Search..." 
+                  className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <ReportExport transactions={filteredTransactions} />
+                <button 
+                  onClick={() => setShowForm(!showForm)}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">New Entry</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            <ReportExport transactions={filteredTransactions} />
-            <button 
-              onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Entry</span>
-            </button>
           </div>
         </header>
 
@@ -623,11 +650,11 @@ export default function App() {
                     )}
 
                     {/* Bank Balances Widget */}
-                    {user && selectedAccountId === "0" && accountBalances.length > 0 && (
+                    {user && selectedAccountId === "0" && filteredAccountBalances.length > 0 && (
                       <div className="mt-12 pt-12 border-t border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Bank Breakdown</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Bank Breakdown (Snapshot)</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                          {accountBalances.map(acc => (
+                          {filteredAccountBalances.map(acc => (
                             <div key={acc.id} className="p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 transition-all group">
                               <div className="flex items-center gap-2 mb-2">
                                 <CreditCard className="w-3 h-3 text-emerald-500" />
@@ -765,7 +792,7 @@ export default function App() {
                       </div>
                       <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={accountBalances}>
+                          <BarChart data={filteredAccountBalances}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                             <XAxis 
                               dataKey="name" 
@@ -804,19 +831,19 @@ export default function App() {
 
                   <div className="lg:col-span-4 space-y-8">
                     <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 text-center flex flex-col justify-center h-full">
-                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">Total Cash</p>
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">Total Cash (Snapshot)</p>
                       <p className="text-5xl font-bold tracking-tighter text-foreground mb-4">
-                        ₹{accountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                       <div className="h-px bg-emerald-500/10 w-full my-6" />
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Accounts</span>
-                          <span className="text-sm font-bold">{accountBalances.length}</span>
+                          <span className="text-sm font-bold">{filteredAccountBalances.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Average per Account</span>
-                          <span className="text-sm font-bold">₹{Math.round(accountBalances.reduce((sum, acc) => sum + acc.balance, 0) / (accountBalances.length || 1)).toLocaleString()}</span>
+                          <span className="text-sm font-bold">₹{Math.round(filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0) / (filteredAccountBalances.length || 1)).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -824,7 +851,7 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {accountBalances.map(acc => (
+                  {filteredAccountBalances.map(acc => (
                     <div 
                       key={acc.id} 
                       onClick={() => {
@@ -888,12 +915,12 @@ export default function App() {
                 </div>
 
                 <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-12 text-center">
-                  <h3 className="text-2xl font-bold tracking-tighter mb-4">Total Savings</h3>
+                  <h3 className="text-2xl font-bold tracking-tighter mb-4">Total Savings (Snapshot)</h3>
                   <p className="text-6xl font-bold tracking-tighter text-emerald-500">
-                    ₹{accountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ₹{filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-                    This is the total amount of money you have in all your accounts combined.
+                    This is the total amount of money you had in all your accounts combined at the end of the selected period.
                   </p>
                 </div>
               </motion.div>
@@ -961,27 +988,43 @@ export default function App() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {categories.map(cat => (
-                    <div key={cat.id} className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                      <div className="flex justify-between items-start mb-6 relative">
-                        <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
-                          <Tags className="w-6 h-6" />
+                  {categories.map(cat => {
+                    const catStat = stats?.categoryStats.find(s => s.category === cat.name);
+                    return (
+                      <div key={cat.id} className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+                        <div className="flex justify-between items-start mb-6 relative">
+                          <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
+                            <Tags className="w-6 h-6" />
+                          </div>
+                          <button 
+                            onClick={() => {
+                              const name = prompt("Edit category name:", cat.name);
+                              if (name) handleEditCategory(cat.id, name);
+                            }}
+                            className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => {
-                            const name = prompt("Edit category name:", cat.name);
-                            if (name) handleEditCategory(cat.id, name);
-                          }}
-                          className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </button>
+                        <p className="text-sm font-bold tracking-tight text-foreground relative">{cat.name}</p>
+                        {catStat ? (
+                          <div className="mt-4 pt-4 border-t border-border/50 space-y-1 relative">
+                            <div className="flex justify-between text-[9px] font-bold">
+                              <span className="text-emerald-500">INCOME</span>
+                              <span>₹{catStat.total_credit.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-[9px] font-bold">
+                              <span className="text-rose-500">EXPENSE</span>
+                              <span>₹{catStat.total_expense.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">No activity</p>
+                        )}
                       </div>
-                      <p className="text-sm font-bold tracking-tight text-foreground relative">{cat.name}</p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">System Category</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </motion.div>
             )}

@@ -57,7 +57,7 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
             </p>
           </div>
           <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl sm:col-span-2 lg:col-span-1">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2">Current Balance</p>
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2">Net Change (Period)</p>
             <p className="text-3xl font-bold text-foreground tracking-tighter">
               ₹{(totalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
