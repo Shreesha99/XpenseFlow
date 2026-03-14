@@ -83,9 +83,9 @@ service cloud.firestore {
     match /accounts/{accountId} {
       allow read: if isDocOwner() || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid &&
-                    hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid']) &&
+                    hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid', 'initial_balance']) &&
                     request.resource.data.name is string && request.resource.data.name.size() > 0;
-      allow update: if isDocOwner() && hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid']) &&
+      allow update: if isDocOwner() && hasOnlyAllowedFields(['name', 'logo_url', 'balance', 'uid', 'initial_balance']) &&
                     request.resource.data.uid == resource.data.uid;
       allow delete: if isDocOwner();
     }

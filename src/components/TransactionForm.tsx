@@ -3,6 +3,7 @@ import { Account, Category } from "../types";
 import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Smartphone, Banknote, X, AlertCircle, Tags, CreditCard, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { db, auth, collection, addDoc } from "../firebase";
+import CustomSelect from "./CustomSelect";
 
 interface TransactionFormProps {
   onSuccess: () => void;
@@ -21,7 +22,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
     type: "expense" as "credit" | "expense",
     mode: "digital" as "digital" | "in_hand",
     category: "",
-    account_id: selectedAccountId,
+    account_id: selectedAccountId === "0" ? (accounts[0]?.id || "") : selectedAccountId,
     date: new Date().toISOString().slice(0, 10),
     description: "",
   });
@@ -33,14 +34,18 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
   }, [categories]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, account_id: selectedAccountId }));
-  }, [selectedAccountId]);
+    if (selectedAccountId !== "0") {
+      setFormData(prev => ({ ...prev, account_id: selectedAccountId }));
+    } else if (accounts.length > 0 && (!formData.account_id || formData.account_id === "0")) {
+      setFormData(prev => ({ ...prev, account_id: accounts[0].id }));
+    }
+  }, [selectedAccountId, accounts]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const amountNum = parseFloat(formData.amount);
+    const amountNum = parseFloat(formData.amount.replace(/,/g, ''));
     if (isNaN(amountNum) || amountNum <= 0) {
       setError("Please enter a valid amount greater than 0.");
       return;
@@ -48,6 +53,11 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
 
     if (!formData.title.trim()) {
       setError("Please enter a title for the transaction.");
+      return;
+    }
+
+    if (!formData.account_id || formData.account_id === "0") {
+      setError("Please select a valid account for this transaction.");
       return;
     }
 
@@ -76,7 +86,7 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
         type: "expense",
         mode: "digital",
         category: categories[0]?.name || "",
-        account_id: selectedAccountId,
+        account_id: selectedAccountId === "0" ? (accounts[0]?.id || "") : selectedAccountId,
         date: new Date().toISOString().slice(0, 10),
         description: "",
       });
@@ -88,6 +98,18 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
       setLoading(false);
     }
   };
+
+  const categoryOptions = categories.map(cat => ({
+    id: cat.name,
+    name: cat.name,
+    icon: <Tags className="w-4 h-4 text-emerald-500" />
+  }));
+
+  const accountOptions = accounts.map(acc => ({
+    id: acc.id,
+    name: acc.name,
+    icon: <CreditCard className="w-4 h-4 text-blue-500" />
+  }));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6" id="transaction-form">
@@ -233,40 +255,21 @@ export default function TransactionForm({ onSuccess, categories, accounts, selec
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Category</label>
-          <div className="relative">
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
-            >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name} className="bg-card">
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <Tags className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Account</label>
-          <div className="relative">
-            <select
-              value={formData.account_id}
-              onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
-            >
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id} className="bg-card">
-                  {acc.name}
-                </option>
-              ))}
-            </select>
-            <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          </div>
-        </div>
+        
+        <CustomSelect 
+          label="Category"
+          options={categoryOptions}
+          value={formData.category}
+          onChange={(val) => setFormData({ ...formData, category: val })}
+        />
+
+        <CustomSelect 
+          label="Account"
+          options={accountOptions}
+          value={formData.account_id}
+          onChange={(val) => setFormData({ ...formData, account_id: val })}
+        />
+
         <div className="space-y-2">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Date</label>
           <input

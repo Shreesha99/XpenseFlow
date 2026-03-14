@@ -36,24 +36,27 @@ export default function ExcelImport({ onImport, accountId }: ExcelImportProps) {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error("User not authenticated");
 
-        // Map Excel columns to our format
-        // Expecting columns: Title, Amount, Category, Date, Description
-        const formattedData = jsonData.map((row: any) => ({
-          title: row.Title || row.title || "Imported Entry",
-          amount: parseFloat(row.Amount || row.amount || 0),
-          type: (row.Type || row.type || "expense").toLowerCase(),
-          mode: (row.Mode || row.mode || "digital").toLowerCase(),
-          category: row.Category || row.category || "Other",
-          date: (row.Date || row.date) 
-            ? (typeof (row.Date || row.date) === 'string' 
-                ? (row.Date || row.date) 
-                : new Date(row.Date || row.date).toISOString().slice(0, 10)) 
-            : new Date().toISOString().slice(0, 10),
-          description: row.Description || row.description || "",
-          account_id: accountId,
-          created_at: new Date().toISOString(),
-          uid: uid
-        }));
+        const formattedData = jsonData.map((row: any) => {
+          const rawType = (row.Type || row.type || "expense").toLowerCase();
+          const type = (rawType === 'credit' || rawType === 'income' || rawType === 'deposit') ? 'credit' : 'expense';
+          
+          return {
+            title: row.Title || row.title || "Imported Entry",
+            amount: parseFloat(String(row.Amount || row.amount || 0).replace(/,/g, '')),
+            type,
+            mode: (row.Mode || row.mode || "digital").toLowerCase(),
+            category: row.Category || row.category || "Other",
+            date: (row.Date || row.date) 
+              ? (typeof (row.Date || row.date) === 'string' 
+                  ? (row.Date || row.date) 
+                  : new Date(row.Date || row.date).toISOString().slice(0, 10)) 
+              : new Date().toISOString().slice(0, 10),
+            description: row.Description || row.description || "",
+            account_id: accountId,
+            created_at: new Date().toISOString(),
+            uid: uid
+          };
+        });
 
         await Promise.all(formattedData.map(item => addDoc(collection(db, "transactions"), item)));
 

@@ -12,9 +12,10 @@ interface DeductionItem {
 interface CalculatorProps {
   stats: Stats | null;
   compact?: boolean;
+  totalNetWorth?: number;
 }
 
-export default function Calculator({ stats, compact }: CalculatorProps) {
+export default function Calculator({ stats, compact, totalNetWorth }: CalculatorProps) {
   const [items, setItems] = useState<DeductionItem[]>([
     { id: '1', name: 'Rent', amount: 0, deducted: false },
     { id: '2', name: 'Electricity', amount: 0, deducted: false },
@@ -31,7 +32,7 @@ export default function Calculator({ stats, compact }: CalculatorProps) {
     in_hand_expenses: 0
   };
 
-  const actualBalance = (summary.digital_credits || 0) + (summary.in_hand_credits || 0) - (summary.digital_expenses || 0) - (summary.in_hand_expenses || 0);
+  const actualBalance = totalNetWorth !== undefined ? totalNetWorth : ((summary.digital_credits || 0) + (summary.in_hand_credits || 0) - (summary.digital_expenses || 0) - (summary.in_hand_expenses || 0));
 
   const yetToDeduct = useMemo(() => {
     return items

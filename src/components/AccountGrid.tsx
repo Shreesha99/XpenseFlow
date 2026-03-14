@@ -8,9 +8,11 @@ interface AccountGridProps {
   stats: Stats | null;
   onDelete: (id: string) => void;
   compact?: boolean;
+  actualBalances?: { id: string, name: string, balance: number }[];
+  totalNetWorth?: number;
 }
 
-export default function AccountGrid({ transactions, stats, onDelete, compact }: AccountGridProps) {
+export default function AccountGrid({ transactions, stats, onDelete, compact, actualBalances, totalNetWorth }: AccountGridProps) {
   const summary = stats?.summary || {
     digital_credits: 0,
     in_hand_credits: 0,
@@ -18,7 +20,8 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
     in_hand_expenses: 0
   };
 
-  const totalBalance = (Number(summary.digital_credits) || 0) + (Number(summary.in_hand_credits) || 0) - (Number(summary.digital_expenses) || 0) - (Number(summary.in_hand_expenses) || 0);
+  const netChange = (Number(summary.digital_credits) || 0) + (Number(summary.in_hand_credits) || 0) - (Number(summary.digital_expenses) || 0) - (Number(summary.in_hand_expenses) || 0);
+  const displayTotalBalance = totalNetWorth !== undefined ? totalNetWorth : (actualBalances?.reduce((sum, acc) => sum + acc.balance, 0) || 0);
 
   const BankLogo = ({ url, name, className = "w-4 h-4" }: { url?: string, name: string, className?: string }) => {
     const [error, setError] = useState(false);
@@ -57,9 +60,12 @@ export default function AccountGrid({ transactions, stats, onDelete, compact }: 
             </p>
           </div>
           <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl sm:col-span-2 lg:col-span-1">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2">Net Change (Period)</p>
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2">Current Balance (Actual)</p>
             <p className="text-3xl font-bold text-foreground tracking-tighter">
-              ₹{(totalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ₹{(displayTotalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+            <p className={`text-[10px] font-bold mt-2 ${netChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {netChange >= 0 ? '+' : ''}₹{netChange.toLocaleString()} this period
             </p>
           </div>
         </div>
