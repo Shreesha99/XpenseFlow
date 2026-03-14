@@ -317,7 +317,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans selection:bg-emerald-500/30">
       {/* Sidebar Navigation - Pro Rail */}
-      <aside className="w-20 lg:w-64 border-r border-border bg-card flex flex-col sticky top-0 h-screen z-50 transition-all duration-300">
+      <aside className="hidden md:flex w-20 lg:w-64 border-r border-border bg-card flex-col sticky top-0 h-screen z-50 transition-all duration-300">
         <div className="p-4 lg:p-6 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
@@ -441,23 +441,23 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-40">
-          <div className="flex items-center gap-8 flex-1">
-            <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1">
+        <header className="h-16 md:h-20 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+          <div className="flex items-center gap-2 md:gap-8 flex-1">
+            <div className="flex items-center gap-1 md:gap-2 bg-muted/50 border border-border rounded-xl p-0.5 md:p-1">
               <button 
                 onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5 md:w-4 h-4" />
               </button>
-              <span className="text-sm font-bold text-foreground min-w-[120px] text-center tracking-tight">
-                {format(currentMonth, "MMMM yyyy")}
+              <span className="text-xs md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight">
+                {format(currentMonth, "MMM yyyy")}
               </span>
               <button 
                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5 md:w-4 h-4" />
               </button>
             </div>
 
@@ -471,19 +471,19 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <ReportExport transactions={transactions} />
             <button 
               onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              New Entry
+              <span className="hidden sm:inline">Entry</span>
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-8 lg:p-12">
+        <main className="flex-1 overflow-auto p-4 sm:p-8 lg:p-12 pb-32 md:pb-8">
           <AnimatePresence mode="wait">
             {activeView === 'dashboard' && (
               <motion.div
@@ -1019,18 +1019,22 @@ export default function App() {
       </div>
 
       {/* Mobile Navigation - Floating Island Style */}
-      <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
-        <nav className="bg-card/80 backdrop-blur-2xl border border-border h-16 rounded-2xl flex items-center justify-around px-4 shadow-2xl shadow-black/50">
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg z-[100]">
+        <nav className="bg-card/90 backdrop-blur-2xl border border-border h-16 rounded-2xl flex items-center justify-between px-2 shadow-2xl shadow-black/50">
           <MobileNavItem icon={<LayoutDashboard className="w-5 h-5" />} active={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')} />
           <MobileNavItem icon={<CreditCard className="w-5 h-5" />} active={activeView === 'accounts'} onClick={() => setActiveView('accounts')} />
+          <MobileNavItem icon={<History className="w-5 h-5" />} active={activeView === 'transactions'} onClick={() => setActiveView('transactions')} />
+          
           <button 
             onClick={() => setShowForm(true)}
-            className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white -translate-y-8 shadow-xl shadow-emerald-500/40 active:scale-90 transition-transform"
+            className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white -translate-y-6 shadow-xl shadow-emerald-500/40 active:scale-90 transition-transform shrink-0"
           >
             <Plus className="w-6 h-6" />
           </button>
+
           <MobileNavItem icon={<CalcIcon className="w-5 h-5" />} active={activeView === 'planning'} onClick={() => setActiveView('planning')} />
           <MobileNavItem icon={<Tags className="w-5 h-5" />} active={activeView === 'categories'} onClick={() => setActiveView('categories')} />
+          <MobileNavItem icon={<Settings className="w-5 h-5" />} active={activeView === 'settings'} onClick={() => setActiveView('settings')} />
         </nav>
       </div>
 
@@ -1208,7 +1212,7 @@ function MobileNavItem({ icon, active, onClick }: { icon: ReactNode, active: boo
   return (
     <button 
       onClick={onClick}
-      className={`p-3 rounded-xl transition-all duration-300 ${active ? 'text-emerald-500 bg-emerald-500/10 scale-110' : 'text-muted-foreground'}`}
+      className={`p-2.5 rounded-xl transition-all duration-300 ${active ? 'text-emerald-500 bg-emerald-500/10 scale-110' : 'text-muted-foreground'}`}
     >
       {icon}
     </button>
