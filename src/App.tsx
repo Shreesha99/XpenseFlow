@@ -13,6 +13,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import CustomSelect from "./components/CustomSelect";
 import PromptModal from "./components/PromptModal";
 import ConfirmationModal from "./components/ConfirmationModal";
+import SearchResults from "./components/SearchResults";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
@@ -98,6 +99,7 @@ function AppContent() {
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [addAccountData, setAddAccountData] = useState({
     bankName: "",
     initialBalance: ""
@@ -138,7 +140,7 @@ function AppContent() {
     onConfirm: () => {},
   });
 
-  // Derived Filtered Transactions
+  // Derived Filtered Transactions (Main View - only date/account filters)
   const filteredTransactions = useMemo(() => {
     if (!user) return [];
     
@@ -161,37 +163,40 @@ function AppContent() {
 
       const matchesAccount = selectedAccountId === "0" || t.account_id === selectedAccountId;
       
-      // Advanced Search Logic
-      let matchesSearch = true;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        
-        // Check for special operators
-        if (query.startsWith('>') || query.startsWith('<') || query.startsWith('=')) {
-          const operator = query[0];
-          const value = parseFloat(query.slice(1));
-          if (!isNaN(value)) {
-            if (operator === '>') matchesSearch = t.amount > value;
-            else if (operator === '<') matchesSearch = t.amount < value;
-            else if (operator === '=') matchesSearch = t.amount === value;
-          }
-        } else {
-          // General search across multiple fields
-          const accountName = accounts.find(a => a.id === t.account_id)?.name.toLowerCase() || "";
-          matchesSearch = 
-            t.title.toLowerCase().includes(query) ||
-            t.category.toLowerCase().includes(query) ||
-            t.description?.toLowerCase().includes(query) ||
-            accountName.includes(query) ||
-            t.amount.toString().includes(query) ||
-            t.mode.toLowerCase().includes(query) ||
-            t.type.toLowerCase().includes(query);
+      return matchesTime && matchesAccount;
+    });
+  }, [transactions, filterMode, filterDate, customRange, selectedAccountId, user]);
+
+  // Search Results (Independent of main view filters)
+  const searchResults = useMemo(() => {
+    if (!user || !searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase().trim();
+    
+    return transactions.filter(t => {
+      // Check for special operators
+      if (query.startsWith('>') || query.startsWith('<') || query.startsWith('=')) {
+        const operator = query[0];
+        const value = parseFloat(query.slice(1));
+        if (!isNaN(value)) {
+          if (operator === '>') return t.amount > value;
+          if (operator === '<') return t.amount < value;
+          if (operator === '=') return t.amount === value;
         }
       }
-
-      return matchesTime && matchesAccount && matchesSearch;
+      
+      const accountName = accounts.find(a => a.id === t.account_id)?.name.toLowerCase() || "";
+      return (
+        t.title.toLowerCase().includes(query) ||
+        t.category.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query) ||
+        accountName.includes(query) ||
+        t.amount.toString().includes(query) ||
+        t.mode.toLowerCase().includes(query) ||
+        t.type.toLowerCase().includes(query)
+      );
     });
-  }, [transactions, filterMode, filterDate, customRange, selectedAccountId, searchQuery, accounts, user]);
+  }, [transactions, searchQuery, accounts, user]);
 
   // End of period for balance snapshot
   const endOfPeriod = useMemo(() => {
@@ -720,17 +725,52 @@ function AppContent() {
                   type="text" 
                   placeholder="Search transactions, categories, amounts (>100)..." 
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSearchResults(true);
+                  }}
+                  onFocus={() => setShowSearchResults(true)}
                   className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
                 />
                 {searchQuery && (
                   <button 
-                    onClick={() => setSearchQuery("")}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setShowSearchResults(false);
+                    }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
+
+                <AnimatePresence>
+                  {showSearchResults && searchQuery && (
+                    <div className="absolute top-full left-0 w-full mt-2 z-[150]">
+                      <div 
+                        className="fixed inset-0 z-[-1]" 
+                        onClick={() => setShowSearchResults(false)} 
+                      />
+                      <SearchResults 
+                        results={searchResults}
+                        accounts={accounts}
+                        searchQuery={searchQuery}
+                        onClose={() => setShowSearchResults(false)}
+                        onSelect={(t) => {
+                          // When a transaction is selected, we could scroll to it or show details
+                          // For now, let's just close the search and maybe filter the view to that month?
+                          const date = parseISO(String(t.date));
+                          setFilterDate(date);
+                          setFilterMode('month');
+                          setSelectedAccountId("0");
+                          setActiveView('transactions');
+                          setShowSearchResults(false);
+                          setSearchQuery("");
+                        }}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
               
               <div className="flex items-center gap-2">
