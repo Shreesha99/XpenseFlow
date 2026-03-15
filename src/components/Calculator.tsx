@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Stats } from '../types';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { CreditCard, CheckCircle2, Circle, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
 interface DeductionItem {
   id: string;
@@ -25,14 +26,7 @@ export default function Calculator({ stats, compact, totalNetWorth }: Calculator
     { id: '6', name: 'Gym', amount: 0, deducted: false },
   ]);
 
-  const summary = stats?.summary || {
-    digital_credits: 0,
-    in_hand_credits: 0,
-    digital_expenses: 0,
-    in_hand_expenses: 0
-  };
-
-  const actualBalance = totalNetWorth !== undefined ? totalNetWorth : ((summary.digital_credits || 0) + (summary.in_hand_credits || 0) - (summary.digital_expenses || 0) - (summary.in_hand_expenses || 0));
+  const actualBalance = totalNetWorth || 0;
 
   const yetToDeduct = useMemo(() => {
     return items
@@ -56,135 +50,117 @@ export default function Calculator({ stats, compact, totalNetWorth }: Calculator
 
   if (compact) {
     return (
-      <div className="space-y-6" id="calculator-compact">
-        <div className="space-y-3">
-          {items.slice(0, 3).map(item => (
-            <div key={item.id} className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className={`w-1.5 h-1.5 rounded-full ${item.deducted ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'}`} />
-                <span className="text-xs font-semibold text-foreground tracking-tight">{item.name}</span>
-              </div>
-              <span className="text-xs font-mono font-bold text-foreground">₹{(item.amount || 0).toLocaleString()}</span>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Projected Balance</span>
+          <span className="text-sm font-bold text-emerald-500">₹{projectedBalance.toLocaleString()}</span>
+        </div>
+        <div className="space-y-2">
+          {items.filter(i => !i.deducted).slice(0, 2).map(item => (
+            <div key={item.id} className="flex justify-between text-[10px] text-muted-foreground">
+              <span>{item.name}</span>
+              <span>₹{item.amount.toLocaleString()}</span>
             </div>
           ))}
-        </div>
-        <div className="pt-4 border-t border-border flex justify-between items-center">
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Projected</span>
-            <p className="text-xs text-muted-foreground/50 leading-none">After deductions</p>
-          </div>
-          <span className="text-xl font-bold font-mono text-emerald-500 tracking-tighter">₹{(projectedBalance || 0).toLocaleString()}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12" id="calculator-view">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto space-y-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-4xl font-bold tracking-tighter">Subscriptions</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage your recurring financial commitments.</p>
+          <p className="text-sm text-muted-foreground mt-1">Track and project your upcoming recurring expenses.</p>
         </div>
-        <div className="flex gap-4">
-          <div className="px-6 py-3 bg-card border border-border rounded-2xl shadow-sm">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Projected Balance</p>
-            <p className="text-2xl font-bold font-mono text-emerald-500 tracking-tighter">₹{(projectedBalance || 0).toLocaleString()}</p>
-          </div>
+        <div className="bg-emerald-500/5 border border-emerald-500/10 px-8 py-4 rounded-3xl text-right">
+          <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Projected Net</p>
+          <p className="text-3xl font-bold tracking-tighter">₹{projectedBalance.toLocaleString()}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8">
-          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-            <table className="w-full border-collapse text-xs">
-              <thead>
-                <tr className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] border-b border-border">
-                  <th className="p-6 text-left">Service / Item</th>
-                  <th className="p-6 text-right">Amount (₹)</th>
-                  <th className="p-6 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {items.map(item => (
-                  <tr key={item.id} className="group hover:bg-emerald-500/[0.02] transition-colors">
-                    <td className="p-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${item.deducted ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'}`} />
-                        <span className="text-sm font-bold tracking-tight text-foreground">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-6 text-right">
-                      <input 
-                        type="number" 
-                        value={item.amount || ''} 
-                        onChange={(e) => updateAmount(item.id, e.target.value)}
-                        className="bg-muted/50 border border-border rounded-xl p-3 text-right text-sm font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all w-32"
-                        placeholder="0"
-                      />
-                    </td>
-                    <td className="p-6 text-center">
-                      <button 
-                        onClick={() => toggleDeducted(item.id)}
-                        className={`px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                          item.deducted 
-                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                            : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                        }`}
-                      >
-                        {item.deducted ? 'Authorized' : 'Pending'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="lg:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {items.map(item => (
+              <div 
+                key={item.id}
+                className={`p-6 rounded-3xl border transition-all duration-300 group ${
+                  item.deducted 
+                    ? 'bg-muted/30 border-border opacity-60' 
+                    : 'bg-card border-border hover:border-emerald-500/30 shadow-sm'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-3 rounded-2xl ${item.deducted ? 'bg-muted' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <button 
+                    onClick={() => toggleDeducted(item.id)}
+                    className={`p-2 rounded-xl transition-all ${
+                      item.deducted 
+                        ? 'text-emerald-500 bg-emerald-500/10' 
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {item.deducted ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                      {item.deducted ? 'Deducted' : 'Pending'}
+                    </p>
+                  </div>
+                  
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">₹</span>
+                    <input 
+                      type="number"
+                      value={item.amount || ''}
+                      onChange={(e) => updateAmount(item.id, e.target.value)}
+                      className="w-full bg-muted/50 border border-border rounded-xl py-2 pl-7 pr-3 text-sm font-bold focus:outline-none focus:border-emerald-500/50 transition-all"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <div className="bg-card border border-border rounded-3xl p-8 shadow-sm space-y-8">
+          <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm space-y-8 sticky top-8">
             <div className="space-y-2">
-              <h3 className="text-lg font-bold tracking-tight">Summary</h3>
-              <p className="text-xs text-muted-foreground">Monthly recurring expenditure breakdown.</p>
+              <h3 className="text-xl font-bold tracking-tight">Projection</h3>
+              <p className="text-xs text-muted-foreground">How your balance looks after all commitments.</p>
             </div>
 
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Actual Liquidity</span>
-                <span className="text-sm font-mono font-bold">₹{(actualBalance || 0).toLocaleString()}</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Liquidity</span>
+                <span className="text-sm font-bold">₹{actualBalance.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Yet To Deduct</span>
-                <span className="text-sm font-mono font-bold text-amber-500">₹{(yetToDeduct || 0).toLocaleString()}</span>
+                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Total Pending</span>
+                <span className="text-sm font-bold text-amber-500">- ₹{yetToDeduct.toLocaleString()}</span>
               </div>
               <div className="h-px bg-border" />
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Projected Net</span>
-                <span className="text-lg font-mono font-bold text-emerald-500">₹{(projectedBalance || 0).toLocaleString()}</span>
+                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Projected Final</span>
+                <span className="text-2xl font-bold text-emerald-500 tracking-tighter">₹{projectedBalance.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                <span>Liquidity Ratio</span>
-                <span>{Math.round((projectedBalance / (actualBalance || 1)) * 100)}%</span>
-              </div>
-              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(Math.max((projectedBalance / (actualBalance || 1)) * 100, 0), 100)}%` }}
-                  transition={{ duration: 1.5, ease: [0.23, 1, 0.32, 1] }}
-                  className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                />
-              </div>
+            <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex gap-4 items-start">
+              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider leading-relaxed">
+                Ensure you have enough liquidity in your primary accounts to cover these pending commitments.
+              </p>
             </div>
-          </div>
-
-          <div className="p-8 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl">
-            <p className="text-xs text-emerald-500/60 leading-relaxed italic">
-              "Financial freedom is available to those who learn about it and work for it."
-            </p>
           </div>
         </div>
       </div>

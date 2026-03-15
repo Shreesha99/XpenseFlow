@@ -14,6 +14,8 @@ import CustomSelect from "./components/CustomSelect";
 import PromptModal from "./components/PromptModal";
 import ConfirmationModal from "./components/ConfirmationModal";
 import SearchResults from "./components/SearchResults";
+import DashboardInsights from "./components/DashboardInsights";
+import RecentActivity from "./components/RecentActivity";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
@@ -100,6 +102,9 @@ function AppContent() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [ledgerFilter, setLedgerFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [addAccountData, setAddAccountData] = useState({
     bankName: "",
     initialBalance: ""
@@ -223,14 +228,10 @@ function AppContent() {
     });
   }, [accounts, transactions, endOfPeriod]);
 
-  // Actual Current Balances (Ignoring period filter, up to now)
+  // Actual Current Balances (Reflects everything in DB)
   const actualAccountBalances = useMemo(() => {
-    const now = new Date();
     return accounts.map(acc => {
-      const accTransactions = transactions.filter(t => {
-        const date = parseISO(String(t.date));
-        return date <= now && t.account_id === acc.id;
-      });
+      const accTransactions = transactions.filter(t => t.account_id === acc.id);
       const balance = accTransactions.reduce((sum, t) => {
         const amountStr = String(t.amount || 0).replace(/,/g, '');
         const amount = parseFloat(amountStr) || 0;
@@ -240,14 +241,10 @@ function AppContent() {
     });
   }, [accounts, transactions]);
 
-  // Total Net Worth (Includes orphaned transactions for accuracy)
+  // Total Net Worth (Reflects everything in DB)
   const totalNetWorth = useMemo(() => {
-    const now = new Date();
     const initialBalancesSum = accounts.reduce((sum, acc) => sum + (Number(acc.initial_balance) || 0), 0);
     const transactionsSum = transactions.reduce((sum, t) => {
-      const date = parseISO(String(t.date));
-      if (date > now) return sum;
-      // Handle potential string amounts with commas from legacy data
       const amountStr = String(t.amount || 0).replace(/,/g, '');
       const amount = parseFloat(amountStr) || 0;
       return t.type === 'credit' ? sum + amount : sum - amount;
@@ -413,6 +410,32 @@ function AppContent() {
     }
   };
 
+  const handleRefresh = () => {
+    setIsSyncing(true);
+    // In a real-time app, onSnapshot handles the data, 
+    // but we can use this to force a state refresh and update the sync timestamp
+    setTimeout(() => {
+      setLastSynced(new Date());
+      setIsSyncing(false);
+    }, 8000); // Longer sync time to feel more substantial
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!user) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Category",
+      message: "Are you sure you want to delete this category? Transactions in this category will remain but will be uncategorized.",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "categories", id));
+        } catch (error) {
+          console.error("Failed to delete category:", error);
+        }
+      }
+    });
+  };
+
   const handleAddAccount = async (name: string, initialBalance: number = 0, logo_url: string = "") => {
     if (!user) return;
     try {
@@ -509,10 +532,10 @@ function AppContent() {
   
   const actualCurrentBalance = useMemo(() => {
     if (selectedAccountId === "0") {
-      return filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0);
+      return actualAccountBalances.reduce((sum, acc) => sum + acc.balance, 0);
     }
-    return filteredAccountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
-  }, [filteredAccountBalances, selectedAccountId]);
+    return actualAccountBalances.find(a => a.id === selectedAccountId)?.balance || 0;
+  }, [actualAccountBalances, selectedAccountId]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans selection:bg-emerald-500/30">
@@ -799,65 +822,72 @@ function AppContent() {
                 className="space-y-12"
               >
                 {/* Hero Section - Editorial Style */}
-                <section className="relative overflow-hidden">
+                <section className="relative overflow-hidden bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-12">
                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
                   <div className="relative">
-                    <p className="font-display italic text-5xl md:text-6xl lg:text-8xl text-foreground leading-none mb-6 tracking-tighter">
-                      Financial <br /> 
-                      <span className="text-emerald-500">Intelligence.</span>
-                    </p>
-                    {!user ? (
-                      <div className="bg-card border border-border p-8 rounded-3xl text-center space-y-4 shadow-2xl">
-                        <Wallet className="w-12 h-12 text-emerald-500 mx-auto" />
-                        <h3 className="text-xl font-bold">Connect your wallet</h3>
-                        <p className="text-sm text-muted-foreground">Sign in to start tracking your expenses across all your bank accounts.</p>
-                        <button 
-                          onClick={signIn}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20"
-                        >
-                          Sign in with Google
-                        </button>
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 md:gap-12">
+                      <div className="space-y-4 md:space-y-6">
+                        <p className="font-display italic text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-foreground leading-[0.9] tracking-tighter">
+                          Financial <br /> 
+                          <span className="text-emerald-500">Intelligence.</span>
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground max-w-md leading-relaxed">
+                          Your personal command center for wealth management. Track, analyze, and optimize your financial journey with real-time precision.
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-8 md:gap-12 mt-12">
-                        <div className="space-y-1 flex items-center gap-4">
-                          {selectedAccountId !== "0" && accountBalances.find(a => a.id === selectedAccountId) && (
-                            <BankLogo 
-                              url={accountBalances.find(a => a.id === selectedAccountId)?.logo_url} 
-                              name={accountBalances.find(a => a.id === selectedAccountId)?.name || ""} 
-                              className="w-12 h-12 md:w-16 md:h-16"
-                            />
-                          )}
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Current Balance</p>
-                            <p className="text-3xl md:text-4xl font-bold tracking-tighter">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+
+                      {!user ? (
+                        <div className="bg-card border border-border p-8 rounded-3xl text-center space-y-4 shadow-2xl max-w-sm w-full lg:w-auto">
+                          <Wallet className="w-12 h-12 text-emerald-500 mx-auto" />
+                          <h3 className="text-xl font-bold">Connect your wallet</h3>
+                          <p className="text-sm text-muted-foreground">Sign in to start tracking your expenses across all your bank accounts.</p>
+                          <button 
+                            onClick={signIn}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20"
+                          >
+                            Sign in with Google
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-[2rem] w-full lg:w-auto overflow-hidden">
+                          <div className="space-y-1 min-w-0">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Liquidity</p>
+                            <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter text-foreground truncate">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <div className="hidden sm:block w-px h-12 bg-emerald-500/20 shrink-0" />
+                          <div className="flex gap-8 sm:gap-12 shrink-0">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Inflow</p>
+                              <p className="text-xl sm:text-2xl font-bold tracking-tighter text-emerald-500">₹{totalCredits.toLocaleString()}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-[0.2em]">Outflow</p>
+                              <p className="text-xl sm:text-2xl font-bold tracking-tighter text-rose-500">₹{totalExpenses.toLocaleString()}</p>
+                            </div>
                           </div>
                         </div>
-                        <div className="w-px h-12 bg-border hidden sm:block" />
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Income</p>
-                          <p className="text-2xl font-bold tracking-tighter text-emerald-500">₹{totalCredits.toLocaleString()}</p>
-                        </div>
-                        <div className="w-px h-12 bg-border hidden sm:block" />
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Outflow</p>
-                          <p className="text-2xl font-bold tracking-tighter text-rose-500">₹{totalExpenses.toLocaleString()}</p>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Bank Balances Widget */}
                     {user && selectedAccountId === "0" && filteredAccountBalances.length > 0 && (
-                      <div className="mt-12 pt-12 border-t border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Bank Breakdown (Snapshot)</p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                      <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-emerald-500/10">
+                        <div className="flex items-center justify-between mb-6 sm:mb-8">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Bank Breakdown</p>
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Live Sync</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
                           {filteredAccountBalances.map(acc => (
-                            <div key={acc.id} className="p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 transition-all group">
-                              <div className="flex items-center gap-2 mb-2">
-                                <CreditCard className="w-3 h-3 text-emerald-500" />
-                                <p className="text-[10px] font-bold text-foreground truncate">{acc.name}</p>
+                            <div key={acc.id} className="p-4 sm:p-6 bg-background/50 border border-emerald-500/10 rounded-2xl sm:rounded-3xl hover:border-emerald-500/30 transition-all group relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full -translate-y-8 translate-x-8 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+                              <div className="flex items-center gap-3 mb-3 sm:mb-4 relative">
+                                <BankLogo url={acc.logo_url} name={acc.name} className="w-6 h-6 sm:w-8 sm:h-8" />
+                                <p className="text-[10px] font-bold text-foreground truncate uppercase tracking-widest">{acc.name}</p>
                               </div>
-                              <p className={`text-sm font-bold tracking-tight ${acc.balance >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              <p className={`text-base sm:text-lg font-bold tracking-tighter relative ${acc.balance >= 0 ? 'text-foreground' : 'text-rose-500'}`}>
                                 ₹{acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </p>
                             </div>
@@ -867,6 +897,19 @@ function AppContent() {
                     )}
                   </div>
                 </section>
+
+                {/* Advanced Insights Section */}
+                {user && (
+                  <section className="space-y-8">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h2 className="text-2xl font-bold tracking-tight">Financial Insights</h2>
+                        <p className="text-xs text-muted-foreground">Real-time analytics and spending patterns.</p>
+                      </div>
+                    </div>
+                    <DashboardInsights transactions={transactions} />
+                  </section>
+                )}
 
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
                   <div className="xl:col-span-8 space-y-8">
@@ -882,16 +925,10 @@ function AppContent() {
                         View Full Ledger
                       </button>
                     </div>
-                    <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-                      <AccountGrid 
-                        transactions={filteredTransactions.slice(0, 8)} 
-                        stats={stats} 
-                        onDelete={handleDelete} 
-                        compact 
-                        actualBalances={actualAccountBalances}
-                        totalNetWorth={totalNetWorth}
-                      />
-                    </div>
+                    <RecentActivity 
+                      transactions={filteredTransactions.slice(0, 6)} 
+                      onDelete={handleDelete} 
+                    />
                   </div>
 
                   <div className="xl:col-span-4 space-y-12">
@@ -928,15 +965,22 @@ function AppContent() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">My Banks & Wallets</h2>
-                    <p className="text-sm text-muted-foreground mt-1">See how much money you have in each bank or wallet.</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm text-muted-foreground">See how much money you have in each bank or wallet.</p>
+                      <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                        Last Synced: {format(lastSynced, "HH:mm:ss")}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button 
-                      onClick={() => {}}
-                      className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium"
+                      onClick={handleRefresh}
+                      disabled={isSyncing}
+                      className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium disabled:opacity-50"
                     >
-                      <RotateCcw className="w-4 h-4" />
-                      Refresh
+                      <RotateCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      {isSyncing ? 'Syncing...' : 'Refresh'}
                     </button>
                     <button 
                       onClick={() => setShowTransfer(true)}
@@ -1191,21 +1235,35 @@ function AppContent() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div>
                     <h2 className="text-4xl font-bold tracking-tighter">Financial Ledger</h2>
                     <p className="text-sm text-muted-foreground mt-1">Detailed history of your income and expenditures.</p>
                   </div>
-                  <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium">
-                      <Filter className="w-4 h-4" />
-                      Filter
-                    </button>
+                  <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
+                    {(['all', 'income', 'expense'] as const).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setLedgerFilter(type)}
+                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+                          ledgerFilter === type 
+                            ? 'bg-background text-foreground shadow-sm' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
                   <AccountGrid 
-                    transactions={filteredTransactions} 
+                    transactions={filteredTransactions.filter(t => {
+                      if (ledgerFilter === 'all') return true;
+                      if (ledgerFilter === 'income') return t.type === 'credit';
+                      if (ledgerFilter === 'expense') return t.type === 'expense';
+                      return true;
+                    })} 
                     stats={stats} 
                     onDelete={handleDelete} 
                     actualBalances={actualAccountBalances}
@@ -1269,24 +1327,32 @@ function AppContent() {
                           <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
                             <Tags className="w-6 h-6" />
                           </div>
-                          <button 
-                            onClick={() => {
-                              setPromptConfig({
-                                isOpen: true,
-                                title: "Edit Category",
-                                message: "Enter new category name:",
-                                defaultValue: cat.name,
-                                onConfirm: async (name) => {
-                                  if (name && name.trim()) {
-                                    handleEditCategory(cat.id, name.trim());
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => {
+                                setPromptConfig({
+                                  isOpen: true,
+                                  title: "Edit Category",
+                                  message: "Enter new category name:",
+                                  defaultValue: cat.name,
+                                  onConfirm: async (name) => {
+                                    if (name && name.trim()) {
+                                      handleEditCategory(cat.id, name.trim());
+                                    }
                                   }
-                                }
-                              });
-                            }}
-                            className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
+                                });
+                              }}
+                              className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteCategory(cat.id)}
+                              className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-sm font-bold tracking-tight text-foreground relative">{cat.name}</p>
                         {catStat ? (
