@@ -784,7 +784,7 @@ function AppContent() {
               <div className="space-y-1">
                 <button
                   onClick={() => {
-                    setSelectedAccountId("all");
+                    setSelectedAccountId("0");
                     setActiveView("dashboard");
                   }}
                   className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
