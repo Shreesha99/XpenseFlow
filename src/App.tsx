@@ -38,7 +38,6 @@ import AccountGrid from "./components/AccountGrid";
 import CategorySummary from "./components/CategorySummary";
 import Calculator from "./components/Calculator";
 import ReportExport from "./components/ReportExport";
-import ExcelImport from "./components/ExcelImport";
 import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -98,6 +97,9 @@ import {
   updateDoc,
   User,
 } from "./firebase";
+import SettingsView from "./components/SettingsView";
+import BankLogo from "./components/BankLogo";
+import { INDIAN_BANKS } from "./constants/banks";
 
 type View =
   | "dashboard"
@@ -106,120 +108,6 @@ type View =
   | "categories"
   | "settings"
   | "accounts";
-
-type Bank = {
-  name: string;
-  slug: string;
-  logo: string;
-};
-
-const INDIAN_BANKS: Bank[] = [
-  {
-    name: "State Bank of India",
-    slug: "sbin",
-    logo: "/bank-logos/sbin/logo.svg",
-  },
-  { name: "HDFC Bank", slug: "hdfc", logo: "/bank-logos/hdfc/logo.svg" },
-  { name: "ICICI Bank", slug: "icic", logo: "/bank-logos/icic/logo.svg" },
-  { name: "Axis Bank", slug: "utib", logo: "/bank-logos/utib/logo.svg" },
-  {
-    name: "Kotak Mahindra Bank",
-    slug: "kkbk",
-    logo: "/bank-logos/kkbk/logo.svg",
-  },
-  { name: "IndusInd Bank", slug: "indb", logo: "/bank-logos/indb/logo.svg" },
-  { name: "Yes Bank", slug: "yesb", logo: "/bank-logos/yesb/logo.svg" },
-  {
-    name: "Punjab National Bank",
-    slug: "punb",
-    logo: "/bank-logos/punb/logo.svg",
-  },
-  { name: "Bank of Baroda", slug: "barb", logo: "/bank-logos/barb/logo.svg" },
-  { name: "Canara Bank", slug: "cnrb", logo: "/bank-logos/cnrb/logo.svg" },
-  { name: "IDFC FIRST Bank", slug: "idfb", logo: "/bank-logos/idfb/logo.svg" },
-  { name: "Federal Bank", slug: "fdrl", logo: "/bank-logos/fdrl/logo.svg" },
-  { name: "RBL Bank", slug: "rblb", logo: "/bank-logos/rblb/logo.svg" },
-  {
-    name: "South Indian Bank",
-    slug: "sibl",
-    logo: "/bank-logos/sibl/logo.svg",
-  },
-  {
-    name: "Union Bank of India",
-    slug: "unio",
-    logo: "/bank-logos/unio/logo.svg",
-  },
-  {
-    name: "Standard Chartered",
-    slug: "scbl",
-    logo: "/bank-logos/scbl/logo.svg",
-  },
-  {
-    name: "Airtel Payments Bank",
-    slug: "airp",
-    logo: "/bank-logos/airp/logo.svg",
-  },
-  {
-    name: "Jio Payments Bank",
-    slug: "jiop",
-    logo: "/bank-logos/jiop/logo.svg",
-  },
-  {
-    name: "Paytm Payments Bank",
-    slug: "payt",
-    logo: "/bank-logos/payt/logo.svg",
-  },
-  {
-    name: "PhonePe / Wallet",
-    slug: "phonepe",
-    logo: "/bank-logos/phonepe/logo.svg",
-  },
-  {
-    name: "Google Pay / GPay",
-    slug: "gpay",
-    logo: "/bank-logos/gpay/logo.svg",
-  },
-  {
-    name: "Amazon Pay",
-    slug: "amazonpay",
-    logo: "/bank-logos/amazonpay/logo.svg",
-  },
-  { name: "Other / Cash", slug: "cash", logo: "" },
-];
-
-function BankLogo({
-  name,
-  url,
-  className,
-}: {
-  name: string;
-  url?: string;
-  className?: string;
-}) {
-  const [error, setError] = useState(false);
-
-  const bank = INDIAN_BANKS.find((b) => b.name === name);
-  const logo = url || bank?.logo;
-
-  if (!logo || error) {
-    return (
-      <div
-        className={`bg-muted rounded-lg flex items-center justify-center ${className}`}
-      >
-        <Landmark className="w-4 h-4" />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={logo}
-      alt={name}
-      className={`rounded-lg object-contain bg-white p-1 ${className}`}
-      onError={() => setError(true)}
-    />
-  );
-}
 
 export default function App() {
   return (
@@ -238,7 +126,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("0");
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
 
   // Date Filtering State
   const [filterMode, setFilterMode] = useState<
@@ -322,7 +210,7 @@ function AppContent() {
       }
 
       const matchesAccount =
-        selectedAccountId === "0" || t.account_id === selectedAccountId;
+        selectedAccountId === "all" || t.account_id === selectedAccountId;
 
       return matchesTime && matchesAccount;
     });
@@ -708,7 +596,7 @@ function AppContent() {
             accTransactions.map((t) => deleteDoc(doc(db, "transactions", t.id)))
           );
           await deleteDoc(doc(db, "accounts", id));
-          if (selectedAccountId === id) setSelectedAccountId("0");
+          if (selectedAccountId === id) setSelectedAccountId("al");
         } catch (error) {
           console.error("Failed to delete account:", error);
         }
@@ -731,7 +619,7 @@ function AppContent() {
     (Number(summary.in_hand_expenses) || 0);
 
   const actualCurrentBalance = useMemo(() => {
-    if (selectedAccountId === "0") {
+    if (selectedAccountId === "all") {
       return actualAccountBalances.reduce((sum, acc) => sum + acc.balance, 0);
     }
     return (
@@ -896,7 +784,7 @@ function AppContent() {
               <div className="space-y-1">
                 <button
                   onClick={() => {
-                    setSelectedAccountId("0");
+                    setSelectedAccountId("all");
                     setActiveView("dashboard");
                   }}
                   className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
@@ -1127,7 +1015,7 @@ function AppContent() {
               <div className="w-full overflow-x-auto no-scrollbar">
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setSelectedAccountId("0")}
+                    onClick={() => setSelectedAccountId("all")}
                     className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
                       selectedAccountId === "0"
                         ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
@@ -1286,7 +1174,7 @@ function AppContent() {
                           const date = parseISO(String(t.date));
                           setFilterDate(date);
                           setFilterMode("month");
-                          setSelectedAccountId("0");
+                          setSelectedAccountId("all");
                           setActiveView("transactions");
                           setShowSearchResults(false);
                           setSearchQuery("");
@@ -1473,6 +1361,7 @@ function AppContent() {
                     </div>
                     <RecentActivity
                       transactions={filteredTransactions.slice(0, 6)}
+                      accounts={accounts}
                       onDelete={handleDelete}
                     />
                   </div>
@@ -2115,197 +2004,13 @@ function AppContent() {
             )}
 
             {activeView === "settings" && (
-              <motion.div
-                key="settings"
-                id="tour-settings-view"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="max-w-5xl mx-auto space-y-8 pb-20"
-              >
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                  <div>
-                    <h2 className="text-5xl font-black tracking-tighter text-foreground">
-                      Settings
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-2 font-medium">
-                      Configure your financial workspace and preferences.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] bg-muted/30 px-4 py-2 rounded-full border border-border/50">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    System Operational
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Account Management */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative group">
-                      <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <Landmark className="w-32 h-32" />
-                      </div>
-
-                      <div className="relative space-y-8">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <h3 className="text-2xl font-bold tracking-tight">
-                              Financial Accounts
-                            </h3>
-                            <p className="text-xs text-muted-foreground font-medium">
-                              Manage your banks, wallets, and digital assets.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 no-scrollbar">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">
-                            Existing Accounts
-                          </p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {accounts.map((acc) => (
-                              <div
-                                key={acc.id}
-                                className="flex items-center justify-between p-4 bg-background border border-border rounded-2xl hover:border-emerald-500/30 transition-all group"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                                    <BankLogo
-                                      name={acc.name}
-                                      url={acc.logo_url}
-                                      className="w-6 h-6"
-                                    />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-bold">
-                                      {acc.name}
-                                    </p>
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                      {acc.id === "1" ? "Primary" : "Secondary"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteAccount(acc.id)}
-                                  className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-blue-500/10 rounded-2xl">
-                          <FileUp className="w-6 h-6 text-blue-500" />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold tracking-tight">
-                            Bulk Data Import
-                          </h3>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            Sync your external statements with XpenseFlow.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-muted/20 p-6 rounded-3xl border border-border/50">
-                        <ExcelImport
-                          onImport={() => {}}
-                          accountId={selectedAccountId}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sidebar Settings */}
-                  <div className="space-y-6">
-                    <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm space-y-8">
-                      <div className="space-y-1">
-                        <h3 className="text-xl font-bold tracking-tight">
-                          Preferences
-                        </h3>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          Personalize your workspace.
-                        </p>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="p-5 bg-muted/20 rounded-3xl border border-border/50 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-background rounded-lg flex items-center justify-center border border-border">
-                                <span className="text-xs font-bold">₹</span>
-                              </div>
-                              <span className="text-sm font-bold">
-                                Currency
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                              INR
-                            </span>
-                          </div>
-                          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                            <p className="text-[10px] text-amber-600 font-bold leading-relaxed">
-                              Currency selection is currently locked to INR.
-                              Future support for multi-currency workspaces will
-                              be added soon.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-emerald-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden group">
-                      <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <ShieldCheck className="w-32 h-32" />
-                      </div>
-                      <div className="relative space-y-4">
-                        <h3 className="text-xl font-bold">
-                          Security & Privacy
-                        </h3>
-                        <p className="text-xs text-emerald-100 leading-relaxed">
-                          Your data is encrypted and stored securely in our
-                          cloud infrastructure. We never share your financial
-                          information.
-                        </p>
-                        <div className="pt-2">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                            <Lock className="w-3 h-3" /> End-to-End Encrypted
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                            <UserIcon className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">
-                              {user?.displayName || "User"}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                              {user?.email}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={logOut}
-                          className="w-full flex items-center justify-center gap-2 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-500 hover:text-white transition-all"
-                        >
-                          <LogOut className="w-4 h-4" /> Sign Out
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              <SettingsView
+                user={user}
+                accounts={accounts}
+                selectedAccountId={selectedAccountId}
+                handleDeleteAccount={handleDeleteAccount}
+                logOut={logOut}
+              />
             )}
           </AnimatePresence>
         </main>

@@ -2,8 +2,8 @@ export interface Transaction {
   id: string;
   title: string;
   amount: number;
-  type: 'credit' | 'expense';
-  mode: 'digital' | 'in_hand';
+  type: "credit" | "expense";
+  mode: "digital" | "in_hand";
   category: string;
   account_id: string;
   account_name?: string;

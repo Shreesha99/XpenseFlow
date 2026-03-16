@@ -164,21 +164,12 @@ export default function FloatingCalculator() {
       </AnimatePresence>
 
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 group relative overflow-hidden ${
-          isOpen
-            ? "bg-rose-500 text-white"
-            : "bg-[#151619] border border-[#2A2C32] text-white hover:border-emerald-500/50"
-        }`}
+        onClick={() => setIsOpen(true)}
+        className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 group relative overflow-hidden bg-[#151619] border border-[#2A2C32] text-white hover:border-emerald-500/50"
       >
-        {!isOpen && (
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.1)_0%,_transparent_70%)]" />
-        )}
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <CalcIcon className="w-6 h-6 text-emerald-500" />
-        )}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.1)_0%,_transparent_70%)]" />
+
+        <CalcIcon className="w-6 h-6 text-emerald-500 relative z-10" />
       </button>
     </div>
   );
