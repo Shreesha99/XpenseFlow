@@ -688,6 +688,35 @@ function AppContent() {
         <header className="min-h-[4rem] border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-3 px-4 md:px-8">
           <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+              {/* Mobile Account Switcher */}
+              <div className="md:hidden w-full overflow-x-auto no-scrollbar pb-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedAccountId("0")}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
+                      selectedAccountId === "0" 
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
+                        : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                    }`}
+                  >
+                    All Accounts
+                  </button>
+                  {accounts.map(acc => (
+                    <button
+                      key={acc.id}
+                      onClick={() => setSelectedAccountId(acc.id)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
+                        selectedAccountId === acc.id 
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
+                          : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                      }`}
+                    >
+                      {acc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Filter Modes */}
               <div id="tour-filters" className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
                 {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
