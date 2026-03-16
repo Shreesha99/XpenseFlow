@@ -2025,7 +2025,7 @@ function AppContent() {
             onClick={() => setActiveView("accounts")}
           />
           <MobileNavItem
-            icon={<History className="w-5 h-5" />}
+            icon={<BookOpen className="w-5 h-5" />}
             active={activeView === "transactions"}
             onClick={() => setActiveView("transactions")}
           />
@@ -2038,7 +2038,7 @@ function AppContent() {
           </button>
 
           <MobileNavItem
-            icon={<CalcIcon className="w-5 h-5" />}
+            icon={<Repeat className="w-5 h-5" />}
             active={activeView === "planning"}
             onClick={() => setActiveView("planning")}
           />
