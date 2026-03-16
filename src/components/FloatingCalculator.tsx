@@ -43,14 +43,14 @@ export default function FloatingCalculator() {
   };
 
   return (
-    <div className="fixed bottom-28 md:bottom-8 right-4 md:right-8 z-[200]">
+    <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[200]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="bg-[#151619] border border-[#2A2C32] rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.5)] w-80 overflow-hidden mb-6"
+            className="bg-[#151619] border border-[#2A2C32] rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.5)] w-72 md:w-80 overflow-hidden mb-4 md:mb-6"
           >
             {/* Hardware Header */}
             <div className="px-6 py-4 bg-[#1A1C20] border-b border-[#2A2C32] flex justify-between items-center">
@@ -117,7 +117,7 @@ export default function FloatingCalculator() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 group relative overflow-hidden ${
+        className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 group relative overflow-hidden ${
           isOpen 
             ? 'bg-rose-500 text-white' 
             : 'bg-[#151619] border border-[#2A2C32] text-white hover:border-emerald-500/50'

@@ -43,7 +43,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-left"
+        className="w-full flex items-center justify-between p-4 rounded-2xl bg-card border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-left"
       >
         <div className="flex items-center gap-3 truncate">
           {selectedOption?.icon}
@@ -59,7 +59,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
             animate={{ opacity: 1, y: 5, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="absolute z-50 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto no-scrollbar"
+            className="absolute z-50 w-full bg-card border border-border rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto no-scrollbar"
           >
             <div className="p-1">
               {options.length === 0 ? (
@@ -74,7 +74,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                       setIsOpen(false);
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl text-sm transition-all hover:bg-muted group ${
-                      String(option.id) === String(value) ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-600 dark:text-slate-400'
+                      String(option.id) === String(value) ? 'bg-emerald-500/10 text-emerald-500' : 'text-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-3 truncate">

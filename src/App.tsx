@@ -607,15 +607,9 @@ function AppContent() {
               <div className="flex items-center justify-between mb-4 px-2">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Accounts</p>
                 <button onClick={() => {
-                  setPromptConfig({
-                    isOpen: true,
-                    title: "New Account",
-                    message: "Enter account name:",
-                    defaultValue: "",
-                    onConfirm: (name) => {
-                      if (name && name.trim()) handleAddAccount(name.trim());
-                    }
-                  });
+                  setActiveView('accounts');
+                  setShowAddAccount(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }} className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors">
                   <Plus className="w-3 h-3" />
                 </button>
@@ -663,13 +657,27 @@ function AppContent() {
               <ThemeToggle />
             </div>
             {user ? (
-              <button 
-                onClick={logOut}
-                className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-muted-foreground hover:text-rose-500 transition-colors text-sm rounded-xl hover:bg-rose-500/10"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="hidden lg:block">Logout</span>
-              </button>
+              <div className="flex items-center justify-between gap-3 w-full p-2 rounded-xl bg-muted/30">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img 
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email}&background=10b981&color=fff`} 
+                    alt="Profile" 
+                    className="w-8 h-8 rounded-full border border-border shrink-0"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="hidden lg:block min-w-0">
+                    <p className="text-[10px] font-bold text-foreground truncate">{user.displayName || 'User'}</p>
+                    <p className="text-[8px] text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={logOut}
+                  className="p-2 text-muted-foreground hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-500/10"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
             ) : (
               <button 
                 onClick={signIn}
@@ -685,40 +693,42 @@ function AppContent() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="min-h-[4rem] border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-3 px-4 md:px-8">
-          <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-              {/* Mobile Account Switcher */}
-              <div className="md:hidden w-full overflow-x-auto no-scrollbar pb-1">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedAccountId("0")}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                      selectedAccountId === "0" 
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
-                        : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    All Accounts
-                  </button>
-                  {accounts.map(acc => (
-                    <button
-                      key={acc.id}
-                      onClick={() => setSelectedAccountId(acc.id)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                        selectedAccountId === acc.id 
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
-                          : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
-                      }`}
-                    >
-                      {acc.name}
-                    </button>
-                  ))}
+        <header className="min-h-0 lg:min-h-[4rem] border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-1.5 lg:py-3 px-4 md:px-8">
+          <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-1.5 lg:gap-4">
+            {/* Mobile Header Top Row - Isolated to Mobile */}
+            <div className="flex items-center justify-between w-full lg:hidden">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                  <Wallet className="w-4 h-4" />
                 </div>
+                <h1 className="text-xs font-bold tracking-tight text-foreground">XpenseFlow</h1>
               </div>
+              <div className="flex items-center gap-1.5">
+                <ThemeToggle />
+                {user && (
+                  <div className="flex items-center gap-1.5">
+                    <img 
+                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email}&background=10b981&color=fff`} 
+                      alt="Profile" 
+                      className="w-6 h-6 rounded-full border border-border"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button 
+                      onClick={logOut}
+                      className="p-1 text-muted-foreground hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-500/10"
+                      title="Logout"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
 
-              {/* Filter Modes */}
-              <div id="tour-filters" className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
+            {/* Desktop Header Elements - Restored to Original Design */}
+            <div className="hidden lg:flex items-center gap-3 w-full lg:w-auto">
+              {/* Filter Modes - Desktop */}
+              <div id="tour-filters" className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5">
                 {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
                   <button
                     key={mode}
@@ -734,8 +744,8 @@ function AppContent() {
                 ))}
               </div>
 
-              {/* Date Switcher */}
-              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1 w-full sm:w-auto justify-between sm:justify-start">
+              {/* Date Switcher - Desktop */}
+              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1">
                 {filterMode !== 'custom' ? (
                   <>
                     <button 
@@ -748,7 +758,7 @@ function AppContent() {
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-[11px] md:text-sm font-bold text-foreground min-w-[100px] md:min-w-[120px] text-center tracking-tight truncate">
+                    <span className="text-sm font-bold text-foreground min-w-[120px] text-center tracking-tight truncate">
                       {filterMode === 'day' && format(filterDate, "dd MMM yy")}
                       {filterMode === 'month' && format(filterDate, "MMM yyyy")}
                       {filterMode === 'year' && format(filterDate, "yyyy")}
@@ -765,22 +775,126 @@ function AppContent() {
                     </button>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2 px-2 py-1">
-                    <input 
-                      type="date" 
-                      value={format(customRange.start, "yyyy-MM-dd")}
-                      onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
-                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
-                    />
-                    <span className="text-muted-foreground text-[10px]">→</span>
-                    <input 
-                      type="date" 
-                      value={format(customRange.end, "yyyy-MM-dd")}
-                      onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
-                      className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
-                    />
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Range</span>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="date" 
+                        value={format(customRange.start, "yyyy-MM-dd")}
+                        onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
+                        className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
+                      />
+                      <span className="text-muted-foreground text-[10px]">-</span>
+                      <input 
+                        type="date" 
+                        value={format(customRange.end, "yyyy-MM-dd")}
+                        onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
+                        className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
+                      />
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Mobile Header Elements - Isolated and Optimized */}
+            <div className="flex lg:hidden flex-col items-center gap-1.5 w-full">
+              {/* Mobile Account Switcher */}
+              <div className="w-full overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelectedAccountId("0")}
+                    className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
+                      selectedAccountId === "0" 
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
+                        : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                    }`}
+                  >
+                    All Accounts
+                  </button>
+                  {accounts.map(acc => (
+                    <button
+                      key={acc.id}
+                      onClick={() => setSelectedAccountId(acc.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
+                        selectedAccountId === acc.id 
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20' 
+                          : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                      }`}
+                    >
+                      {acc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Combined Filters and Date Switcher for Mobile */}
+              <div className="flex items-center gap-1.5 w-full">
+                {/* Filter Modes */}
+                <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 overflow-x-auto no-scrollbar flex-1">
+                  {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setFilterMode(mode)}
+                      className={`px-2 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                        filterMode === mode 
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Date Switcher */}
+                <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 flex-1 justify-between">
+                  {filterMode !== 'custom' ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          if (filterMode === 'day') setFilterDate(subDays(filterDate, 1));
+                          if (filterMode === 'month') setFilterDate(subMonths(filterDate, 1));
+                          if (filterMode === 'year') setFilterDate(subYears(filterDate, 1));
+                        }}
+                        className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        <ChevronLeft className="w-3 h-3" />
+                      </button>
+                      <span className="text-[9px] font-bold text-foreground min-w-[60px] text-center tracking-tight truncate">
+                        {filterMode === 'day' && format(filterDate, "dd MMM yy")}
+                        {filterMode === 'month' && format(filterDate, "MMM yyyy")}
+                        {filterMode === 'year' && format(filterDate, "yyyy")}
+                      </span>
+                      <button 
+                        onClick={() => {
+                          if (filterMode === 'day') setFilterDate(addDays(filterDate, 1));
+                          if (filterMode === 'month') setFilterDate(addMonths(filterDate, 1));
+                          if (filterMode === 'year') setFilterDate(addYears(filterDate, 1));
+                        }}
+                        className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5">
+                      <input 
+                        type="date" 
+                        value={format(customRange.start, "yyyy-MM-dd")}
+                        onChange={(e) => setCustomRange({ ...customRange, start: new Date(e.target.value) })}
+                        className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
+                      />
+                      <span className="text-muted-foreground text-[8px]">→</span>
+                      <input 
+                        type="date" 
+                        value={format(customRange.end, "yyyy-MM-dd")}
+                        onChange={(e) => setCustomRange({ ...customRange, end: new Date(e.target.value) })}
+                        className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1309,7 +1423,7 @@ function AppContent() {
                     ))}
                   </div>
                 </div>
-                <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm" id="tour-ledger-table">
+                <div id="tour-ledger-table">
                   <AccountGrid 
                     transactions={filteredTransactions.filter(t => {
                       if (ledgerFilter === 'all') return true;
