@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Check, Landmark } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface Option {
   id: string | number;
@@ -17,20 +17,32 @@ interface CustomSelectProps {
   className?: string;
 }
 
-export default function CustomSelect({ options, value, onChange, placeholder = "Select option", label, className = "" }: CustomSelectProps) {
+export default function CustomSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "Select option",
+  label,
+  className = "",
+}: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find(opt => String(opt.id) === String(value));
+  const selectedOption = options.find(
+    (opt) => String(opt.id) === String(value)
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -46,10 +58,25 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
         className="w-full flex items-center justify-between p-4 rounded-2xl bg-card border border-border text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-left"
       >
         <div className="flex items-center gap-3 truncate">
-          {selectedOption?.icon}
-          <span className="truncate">{selectedOption ? selectedOption.name : placeholder}</span>
+          {selectedOption?.icon ? (
+            selectedOption.icon
+          ) : (
+            <Landmark className="w-4 h-4 text-muted-foreground" />
+          )}
+
+          <span
+            className={`truncate ${
+              !selectedOption ? "text-muted-foreground" : ""
+            }`}
+          >
+            {selectedOption ? selectedOption.name : placeholder}
+          </span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       <AnimatePresence>
@@ -63,7 +90,9 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
           >
             <div className="p-1">
               {options.length === 0 ? (
-                <div className="p-4 text-center text-xs text-muted-foreground italic">No options available</div>
+                <div className="p-4 text-center text-xs text-muted-foreground italic">
+                  No options available
+                </div>
               ) : (
                 options.map((option) => (
                   <button
@@ -74,12 +103,16 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                       setIsOpen(false);
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl text-sm transition-all hover:bg-muted group ${
-                      String(option.id) === String(value) ? 'bg-emerald-500/10 text-emerald-500' : 'text-foreground'
+                      String(option.id) === String(value)
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : "text-foreground"
                     }`}
                   >
                     <div className="flex items-center gap-3 truncate">
                       {option.icon}
-                      <span className="truncate font-medium">{option.name}</span>
+                      <span className="truncate font-medium">
+                        {option.name}
+                      </span>
                     </div>
                     {String(option.id) === String(value) && (
                       <Check className="w-4 h-4 shrink-0" />

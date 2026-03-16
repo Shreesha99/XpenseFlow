@@ -596,7 +596,7 @@ function AppContent() {
             accTransactions.map((t) => deleteDoc(doc(db, "transactions", t.id)))
           );
           await deleteDoc(doc(db, "accounts", id));
-          if (selectedAccountId === id) setSelectedAccountId("al");
+          if (selectedAccountId === id) setSelectedAccountId("all");
         } catch (error) {
           console.error("Failed to delete account:", error);
         }
@@ -784,11 +784,11 @@ function AppContent() {
               <div className="space-y-1">
                 <button
                   onClick={() => {
-                    setSelectedAccountId("0");
+                    setSelectedAccountId("all");
                     setActiveView("dashboard");
                   }}
                   className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                    selectedAccountId === "0"
+                    selectedAccountId === "all"
                       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
                   }`}
@@ -1017,7 +1017,7 @@ function AppContent() {
                   <button
                     onClick={() => setSelectedAccountId("all")}
                     className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                      selectedAccountId === "0"
+                      selectedAccountId === "all"
                         ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
                         : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
                     }`}
@@ -1275,7 +1275,7 @@ function AppContent() {
                     </div>
 
                     {/* Bank Balances Widget */}
-                    {selectedAccountId === "0" &&
+                    {selectedAccountId === "all" &&
                       filteredAccountBalances.length > 0 && (
                         <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-emerald-500/10">
                           <div className="flex items-center justify-between mb-6 sm:mb-8">
@@ -1874,17 +1874,7 @@ function AppContent() {
               </motion.div>
             )}
 
-            {activeView === "planning" && (
-              <motion.div
-                key="planning"
-                id="tour-planning-view"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-              >
-                <Calculator stats={stats} totalNetWorth={totalNetWorth} />
-              </motion.div>
-            )}
+            <Calculator stats={stats} currentBalance={actualCurrentBalance} />
 
             {activeView === "categories" && (
               <motion.div
@@ -2090,13 +2080,13 @@ function AppContent() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowForm(false)}
-              className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-background/80 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-card border border-border rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-5 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <TransactionForm
