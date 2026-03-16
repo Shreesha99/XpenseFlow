@@ -883,9 +883,10 @@ function AppContent() {
             {/* Mobile Header Top Row - Isolated to Mobile */}
             <div className="flex items-center justify-between w-full lg:hidden">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                {/* <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
                   <Wallet className="w-4 h-4" />
-                </div>
+                </div> */}
+                <img src="/logo.svg" alt="logo" className="w-10 h-10" />
                 <h1 className="text-xs font-bold tracking-tight text-foreground">
                   XpenseFlow
                 </h1>
