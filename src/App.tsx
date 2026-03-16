@@ -24,6 +24,9 @@ import {
   Lock,
   User as UserIcon,
   Landmark,
+  BookOpen,
+  Subscript,
+  Repeat,
 } from "lucide-react";
 import {
   Transaction,
@@ -737,14 +740,14 @@ function AppContent() {
               />
               <NavItem
                 id="tour-ledger"
-                icon={<History className="w-5 h-5" />}
+                icon={<BookOpen className="w-5 h-5" />}
                 label="Ledger"
                 active={activeView === "transactions"}
                 onClick={() => setActiveView("transactions")}
               />
               <NavItem
                 id="tour-subscriptions"
-                icon={<CalcIcon className="w-5 h-5" />}
+                icon={<Repeat className="w-5 h-5" />}
                 label="Subscriptions"
                 active={activeView === "planning"}
                 onClick={() => setActiveView("planning")}
@@ -2090,9 +2093,8 @@ function AppContent() {
             >
               <div className="p-5 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <TransactionForm
-                  onSuccess={() => {
-                    setShowForm(false);
-                  }}
+                  onSuccess={() => setShowForm(false)}
+                  onClose={() => setShowForm(false)}
                   categories={categories}
                   accounts={accounts}
                   selectedAccountId={selectedAccountId}

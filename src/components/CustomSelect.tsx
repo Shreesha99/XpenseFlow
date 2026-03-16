@@ -15,6 +15,7 @@ interface CustomSelectProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  showDefaultIcon?: boolean;
 }
 
 export default function CustomSelect({
@@ -24,6 +25,7 @@ export default function CustomSelect({
   placeholder = "Select option",
   label,
   className = "",
+  showDefaultIcon = true,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,9 +62,9 @@ export default function CustomSelect({
         <div className="flex items-center gap-3 truncate">
           {selectedOption?.icon ? (
             selectedOption.icon
-          ) : (
+          ) : showDefaultIcon ? (
             <Landmark className="w-4 h-4 text-muted-foreground" />
-          )}
+          ) : null}
 
           <span
             className={`truncate ${

@@ -22,6 +22,7 @@ import BankLogo from "./BankLogo";
 
 interface TransactionFormProps {
   onSuccess: () => void;
+  onClose: () => void;
   categories: Category[];
   accounts: Account[];
   selectedAccountId: string;
@@ -29,6 +30,7 @@ interface TransactionFormProps {
 
 export default function TransactionForm({
   onSuccess,
+  onClose,
   categories,
   accounts,
   selectedAccountId,
@@ -143,7 +145,7 @@ export default function TransactionForm({
       id="transaction-form"
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">
               New Entry
@@ -152,14 +154,23 @@ export default function TransactionForm({
               Record your financial movement
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowInstructions(!showInstructions)}
-            className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-emerald-500"
-            title="Show instructions"
-          >
-            <Info className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-emerald-500"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-rose-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>
@@ -170,7 +181,7 @@ export default function TransactionForm({
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800 rounded-2xl p-4 space-y-3">
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-500">
                   <Info className="w-4 h-4" />
                   <span className="text-[10px] font-bold uppercase tracking-wider">
