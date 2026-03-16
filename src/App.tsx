@@ -1924,78 +1924,113 @@ function AppContent() {
                     </button>
                   </div>
                 </div>
-                <div
-                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
-                  id="tour-categories-grid"
-                >
-                  {categories.map((cat) => {
-                    const catStat = stats?.categoryStats.find(
-                      (s) => s.category === cat.name
-                    );
-                    return (
-                      <div
-                        key={cat.id}
-                        className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                        <div className="flex justify-between items-start mb-6 relative">
-                          <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
-                            <Tags className="w-6 h-6" />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setPromptConfig({
-                                  isOpen: true,
-                                  title: "Edit Category",
-                                  message: "Enter new category name:",
-                                  defaultValue: cat.name,
-                                  onConfirm: async (name) => {
-                                    if (name && name.trim()) {
-                                      handleEditCategory(cat.id, name.trim());
-                                    }
-                                  },
-                                });
-                              }}
-                              className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCategory(cat.id)}
-                              className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-sm font-bold tracking-tight text-foreground relative">
-                          {cat.name}
-                        </p>
-                        {catStat ? (
-                          <div className="mt-4 pt-4 border-t border-border/50 space-y-1 relative">
-                            <div className="flex justify-between text-[9px] font-bold">
-                              <span className="text-emerald-500">INCOME</span>
-                              <span>
-                                ₹{catStat.total_credit.toLocaleString()}
-                              </span>
+                {categories.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-3xl bg-muted/20">
+                    <Tags className="w-10 h-10 text-muted-foreground mb-4" />
+
+                    <h3 className="text-lg font-bold tracking-tight mb-1">
+                      No Categories Yet
+                    </h3>
+
+                    <p className="text-xs text-muted-foreground max-w-xs mb-6">
+                      Categories help organize your spending and income. Create
+                      your first category to start tracking where your money
+                      goes.
+                    </p>
+
+                    <button
+                      onClick={() => {
+                        setPromptConfig({
+                          isOpen: true,
+                          title: "New Category",
+                          message: "Enter category name:",
+                          defaultValue: "",
+                          onConfirm: (name) => {
+                            if (name && name.trim())
+                              handleAddCategory(name.trim());
+                          },
+                        });
+                      }}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create First Category
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+                    id="tour-categories-grid"
+                  >
+                    {categories.map((cat) => {
+                      const catStat = stats?.categoryStats.find(
+                        (s) => s.category === cat.name
+                      );
+                      return (
+                        <div
+                          key={cat.id}
+                          className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+                          <div className="flex justify-between items-start mb-6 relative">
+                            <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
+                              <Tags className="w-6 h-6" />
                             </div>
-                            <div className="flex justify-between text-[9px] font-bold">
-                              <span className="text-rose-500">EXPENSE</span>
-                              <span>
-                                ₹{catStat.total_expense.toLocaleString()}
-                              </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setPromptConfig({
+                                    isOpen: true,
+                                    title: "Edit Category",
+                                    message: "Enter new category name:",
+                                    defaultValue: cat.name,
+                                    onConfirm: async (name) => {
+                                      if (name && name.trim()) {
+                                        handleEditCategory(cat.id, name.trim());
+                                      }
+                                    },
+                                  });
+                                }}
+                                className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
+                              >
+                                <Settings className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                        ) : (
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">
-                            No activity
+                          <p className="text-sm font-bold tracking-tight text-foreground relative">
+                            {cat.name}
                           </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                          {catStat ? (
+                            <div className="mt-4 pt-4 border-t border-border/50 space-y-1 relative">
+                              <div className="flex justify-between text-[9px] font-bold">
+                                <span className="text-emerald-500">INCOME</span>
+                                <span>
+                                  ₹{catStat.total_credit.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-[9px] font-bold">
+                                <span className="text-rose-500">EXPENSE</span>
+                                <span>
+                                  ₹{catStat.total_expense.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">
+                              No activity
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
