@@ -760,8 +760,8 @@ function AppContent() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full space-y-8 text-center relative z-10"
         >
-          <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-emerald-500/40 mx-auto mb-8">
-            <Wallet className="w-10 h-10" />
+          <div className="w-20 h-20  rounded-[2rem] flex items-center justify-center  mx-auto mb-8">
+            <img src="/logo.svg" alt="logo" className="w-20 h-20" />
           </div>
 
           <div className="space-y-4">
