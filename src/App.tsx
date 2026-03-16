@@ -21,6 +21,7 @@ import {
   LogOut,
   FileUp,
   HelpCircle,
+  Landmark,
 } from "lucide-react";
 import {
   Transaction,
@@ -105,31 +106,43 @@ type View =
   | "settings"
   | "accounts";
 
-const INDIAN_BANKS = [
-  { name: "State Bank of India", domain: "sbi.co.in" },
-  { name: "HDFC Bank", domain: "hdfcbank.com" },
-  { name: "ICICI Bank", domain: "icicibank.com" },
-  { name: "Axis Bank", domain: "axisbank.com" },
-  { name: "Kotak Mahindra Bank", domain: "kotak.com" },
-  { name: "IndusInd Bank", domain: "indusind.com" },
-  { name: "Yes Bank", domain: "yesbank.in" },
-  { name: "Punjab National Bank", domain: "pnbindia.in" },
-  { name: "Bank of Baroda", domain: "bankofbaroda.in" },
-  { name: "Canara Bank", domain: "canarabank.com" },
-  { name: "Paytm Payments Bank", domain: "paytmbank.com" },
-  { name: "Jio Payments Bank", domain: "jiopaymentsbank.com" },
-  { name: "Airtel Payments Bank", domain: "airtel.in" },
-  { name: "Federal Bank", domain: "federalbank.co.in" },
-  { name: "IDFC FIRST Bank", domain: "idfcfirstbank.com" },
-  { name: "RBL Bank", domain: "rblbank.com" },
-  { name: "South Indian Bank", domain: "southindianbank.com" },
-  { name: "Standard Chartered", domain: "sc.com" },
-  { name: "Union Bank of India", domain: "unionbankofindia.co.in" },
-  { name: "PhonePe / Wallet", logo: "https://logo.clearbit.com/phonepe.com" },
-  { name: "Google Pay / GPay", logo: "https://logo.clearbit.com/google.com" },
-  { name: "Amazon Pay", logo: "https://logo.clearbit.com/amazon.in" },
-  { name: "Other / Cash", logo: "" },
+type Bank = {
+  name: string;
+  slug: string;
+};
+
+export const INDIAN_BANKS: Bank[] = [
+  { name: "State Bank of India", slug: "sbin" },
+  { name: "HDFC Bank", slug: "hdfc" },
+  { name: "ICICI Bank", slug: "icic" },
+  { name: "Axis Bank", slug: "utib" },
+  { name: "Kotak Mahindra Bank", slug: "kkbk" },
+  { name: "IndusInd Bank", slug: "indb" },
+  { name: "Yes Bank", slug: "yesb" },
+  { name: "Punjab National Bank", slug: "punb" },
+  { name: "Bank of Baroda", slug: "barb" },
+  { name: "Canara Bank", slug: "cnrb" },
+  { name: "IDFC FIRST Bank", slug: "idfb" },
+  { name: "Federal Bank", slug: "fdrl" },
+  { name: "RBL Bank", slug: "rblb" },
+  { name: "South Indian Bank", slug: "sibl" },
+  { name: "Union Bank of India", slug: "unio" },
+  { name: "Standard Chartered", slug: "scbl" },
+  { name: "Airtel Payments Bank", slug: "airp" },
+  { name: "Jio Payments Bank", slug: "jiop" },
+  { name: "Paytm Payments Bank", slug: "payt" },
+
+  { name: "PhonePe / Wallet", slug: "phonepe" },
+  { name: "Google Pay / GPay", slug: "gpay" },
+  { name: "Amazon Pay", slug: "amazonpay" },
+
+  { name: "Other / Cash", slug: "cash" },
 ];
+
+function getBankLogo(slug: string) {
+  if (slug === "cash") return "";
+  return `/bank-logos/${slug}/logo.svg`;
+}
 
 function BankLogo({
   name,
@@ -141,17 +154,19 @@ function BankLogo({
   className?: string;
 }) {
   const [error, setError] = useState(false);
-  const bank = INDIAN_BANKS.find((b) => b.name === name);
-  const logo =
-    url ||
-    (bank?.domain ? `https://logo.clearbit.com/${bank.domain}` : bank?.logo);
+
+  const bank = INDIAN_BANKS.find(
+    (b) => b.name.toLowerCase() === name.toLowerCase()
+  );
+
+  const logo = url || (bank ? getBankLogo(bank.slug) : "");
 
   if (!logo || error)
     return (
       <div
         className={`bg-muted rounded-lg flex items-center justify-center ${className}`}
       >
-        <CreditCard className="w-4 h-4" />
+        <Landmark className="w-4 h-4 text-muted-foreground" />
       </div>
     );
 
@@ -159,8 +174,7 @@ function BankLogo({
     <img
       src={logo}
       alt={name}
-      className={`rounded-lg object-contain bg-white p-1 ${className}`}
-      referrerPolicy="no-referrer"
+      className={`object-contain ${className}`}
       onError={() => setError(true)}
     />
   );
@@ -701,7 +715,7 @@ function AppContent() {
             {/* <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
               <Wallet className="w-6 h-6" />
             </div> */}
-            <img src="/logos/icon.svg" alt="XpenseFlow" className="w-12 h-12" />
+            <img src="/logos/logo.svg" alt="XpenseFlow" className="w-12 h-12" />
             <div className="hidden lg:block overflow-hidden">
               <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
                 XpenseFlow
@@ -813,7 +827,7 @@ function AppContent() {
 
           {/* Bottom Section - Fixed */}
           <div className="mt-auto pt-6 border-t border-border shrink-0">
-            <div className="flex items-center justify-between mb-6 px-2 hidden lg:flex">
+            <div className="items-center justify-between mb-6 px-2 hidden lg:flex">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                 Theme
               </span>
@@ -865,8 +879,8 @@ function AppContent() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="min-h-0 lg:min-h-[4rem] border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-1.5 lg:py-3 px-4 md:px-8">
-          <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-1.5 lg:gap-4">
+        <header className="min-h-0 lg:min-h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-1.5 lg:py-3 px-4 md:px-8">
+          <div className="max-w-400 mx-auto flex flex-col lg:flex-row items-center gap-1.5 lg:gap-4">
             {/* Mobile Header Top Row - Isolated to Mobile */}
             <div className="flex items-center justify-between w-full lg:hidden">
               <div className="flex items-center gap-2">
@@ -874,7 +888,7 @@ function AppContent() {
                   <Wallet className="w-4 h-4" />
                 </div> */}
                 <img
-                  src="/logos/icon.svg"
+                  src="/logos/logo.svg"
                   alt="XpenseFlow"
                   className="w-12 h-12"
                 />
@@ -948,7 +962,7 @@ function AppContent() {
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-sm font-bold text-foreground min-w-[120px] text-center tracking-tight truncate">
+                    <span className="text-sm font-bold text-foreground min-w-30 text-center tracking-tight truncate">
                       {filterMode === "day" && format(filterDate, "dd MMM yy")}
                       {filterMode === "month" && format(filterDate, "MMM yyyy")}
                       {filterMode === "year" && format(filterDate, "yyyy")}
@@ -1071,7 +1085,7 @@ function AppContent() {
                       >
                         <ChevronLeft className="w-3 h-3" />
                       </button>
-                      <span className="text-[9px] font-bold text-foreground min-w-[60px] text-center tracking-tight truncate">
+                      <span className="text-[9px] font-bold text-foreground min-w-15 text-center tracking-tight truncate">
                         {filterMode === "day" &&
                           format(filterDate, "dd MMM yy")}
                         {filterMode === "month" &&
@@ -1153,7 +1167,7 @@ function AppContent() {
 
                 <AnimatePresence>
                   {showSearchResults && searchQuery && (
-                    <div className="absolute top-full left-0 w-full mt-2 z-[150]">
+                    <div className="absolute top-full left-0 w-full mt-2 z-150">
                       <div
                         className="fixed inset-0 z-[-1]"
                         onClick={() => setShowSearchResults(false)}
@@ -1252,7 +1266,7 @@ function AppContent() {
                       ) : (
                         <div
                           id="tour-balance"
-                          className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-[2rem] w-full lg:w-auto overflow-hidden"
+                          className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-4xl w-full lg:w-auto overflow-hidden"
                         >
                           <div className="space-y-1 min-w-0">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
@@ -1495,11 +1509,12 @@ function AppContent() {
                         const bank = INDIAN_BANKS.find(
                           (b) => b.name === bankName
                         );
+
                         if (bank) {
-                          const logoUrl = bank.domain
-                            ? `https://logo.clearbit.com/${bank.domain}`
-                            : bank.logo || "";
+                          const logoUrl = getBankLogo(bank.slug);
+
                           handleAddAccount(bank.name, initialBalance, logoUrl);
+
                           setShowAddAccount(false);
                           setAddAccountData({
                             bankName: "",
@@ -1576,7 +1591,7 @@ function AppContent() {
                         </div>
                         <PieChart className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      <div className="h-[300px] w-full">
+                      <div className="h-75 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={filteredAccountBalances}>
                             <CartesianGrid
@@ -1764,7 +1779,7 @@ function AppContent() {
                 </div>
 
                 <div
-                  className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 text-center"
+                  className="bg-emerald-500/5 border border-emerald-500/10 rounded-4xl sm:rounded-[2.5rem] p-6 sm:p-12 text-center"
                   id="tour-banks-networth"
                 >
                   <h3 className="text-xl sm:text-2xl font-bold tracking-tighter mb-4">
@@ -2146,7 +2161,7 @@ function AppContent() {
       </div>
 
       {/* Mobile Navigation - Floating Island Style */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg z-[100]">
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg z-100">
         <nav className="bg-card/90 backdrop-blur-2xl border border-border h-16 rounded-2xl flex items-center justify-between px-2 shadow-2xl shadow-black/50">
           <MobileNavItem
             icon={<LayoutDashboard className="w-5 h-5" />}
@@ -2213,7 +2228,7 @@ function AppContent() {
       {/* Transaction Form Modal */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2245,7 +2260,7 @@ function AppContent() {
       {/* Transfer Modal */}
       <AnimatePresence>
         {showTransfer && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2372,7 +2387,7 @@ function AppContent() {
       </AnimatePresence>
 
       {loading && (
-        <div className="fixed inset-0 bg-background/90 backdrop-blur-md z-[200] flex items-center justify-center">
+        <div className="fixed inset-0 bg-background/90 backdrop-blur-md z-200 flex items-center justify-center">
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="w-16 h-16 border-4 border-emerald-500/20 rounded-full" />
@@ -2472,7 +2487,7 @@ function BalanceCard({
 }) {
   return (
     <div
-      className={`p-8 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden ${
+      className={`p-8 rounded-4xl border transition-all duration-500 group relative overflow-hidden ${
         highlight
           ? "bg-emerald-500/5 border-emerald-500/20 shadow-2xl shadow-emerald-500/10"
           : "bg-card border-border hover:border-emerald-500/30"
