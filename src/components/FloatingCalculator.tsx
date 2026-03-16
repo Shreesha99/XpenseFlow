@@ -51,7 +51,7 @@ export default function FloatingCalculator() {
   };
 
   return (
-    <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[200]">
+    <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-200">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -76,7 +76,7 @@ export default function FloatingCalculator() {
             <div className="p-6 space-y-6">
               {/* Digital Display */}
               <div className="bg-[#0D0E10] border border-[#2A2C32] rounded-2xl p-6 text-right relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_center,_var(--emerald-500)_0%,_transparent_70%)]" />
+                <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_center,var(--emerald-500)_0%,transparent_70%)]" />
                 <p className="text-[10px] font-mono text-emerald-500/40 h-4 truncate mb-1 tracking-widest">
                   {equation}
                 </p>
@@ -167,7 +167,7 @@ export default function FloatingCalculator() {
         onClick={() => setIsOpen(true)}
         className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 group relative overflow-hidden bg-[#151619] border border-[#2A2C32] text-white hover:border-emerald-500/50"
       >
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.1)_0%,_transparent_70%)]" />
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.1)_0%,transparent_70%)]" />
 
         <CalcIcon className="w-6 h-6 text-emerald-500 relative z-10" />
       </button>

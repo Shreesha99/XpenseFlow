@@ -42,7 +42,7 @@ export default function RecentActivity({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="group flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/[0.02] transition-all"
+            className="group flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/2 transition-all"
           >
             <div className="flex items-center gap-4">
               <div
