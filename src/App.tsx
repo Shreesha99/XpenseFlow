@@ -113,7 +113,7 @@ type Bank = {
   logo: string;
 };
 
-export const INDIAN_BANKS: Bank[] = [
+const INDIAN_BANKS: Bank[] = [
   {
     name: "State Bank of India",
     slug: "sbin",
@@ -816,9 +816,10 @@ function AppContent() {
         <div className="p-4 lg:p-6 flex flex-col h-full overflow-hidden">
           {/* Top Section - Fixed */}
           <div className="flex items-center gap-3 mb-10 shrink-0">
-            <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+            {/* <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
               <Wallet className="w-6 h-6" />
-            </div>
+            </div> */}
+            <img src="/logo.svg" alt="logo" className="w-10 h-10" />
             <div className="hidden lg:block overflow-hidden">
               <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
                 XpenseFlow
