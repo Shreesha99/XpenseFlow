@@ -1877,7 +1877,9 @@ function AppContent() {
               </motion.div>
             )}
 
-            <Calculator stats={stats} currentBalance={actualCurrentBalance} />
+            {activeView === "planning" && (
+              <Calculator stats={stats} currentBalance={actualCurrentBalance} />
+            )}
 
             {activeView === "categories" && (
               <motion.div
