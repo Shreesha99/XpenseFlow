@@ -8,16 +8,14 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/logos/icon.svg",
+      "src": "https://picsum.photos/seed/xpense/192/192",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "/logos/icon.svg",
+      "src": "https://picsum.photos/seed/xpense/512/512",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
