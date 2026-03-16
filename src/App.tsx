@@ -1,5 +1,5 @@
 import { useEffect, useState, ReactNode, useMemo } from "react";
-import { Wallet, Plus, Calculator as CalcIcon, Tags, LayoutDashboard, History, PieChart, Settings, Search, Filter, ChevronLeft, ChevronRight, CreditCard, Trash2, RotateCcw, X, ArrowRightLeft, LogIn, LogOut, FileUp } from "lucide-react";
+import { Wallet, Plus, Calculator as CalcIcon, Tags, LayoutDashboard, History, PieChart, Settings, Search, Filter, ChevronLeft, ChevronRight, CreditCard, Trash2, RotateCcw, X, ArrowRightLeft, LogIn, LogOut, FileUp, HelpCircle } from "lucide-react";
 import { Transaction, Stats, Account, Category, CategoryStat, Summary } from "./types";
 import TransactionForm from "./components/TransactionForm";
 import AccountGrid from "./components/AccountGrid";
@@ -16,6 +16,7 @@ import ConfirmationModal from "./components/ConfirmationModal";
 import SearchResults from "./components/SearchResults";
 import DashboardInsights from "./components/DashboardInsights";
 import RecentActivity from "./components/RecentActivity";
+import OnboardingTour from "./components/OnboardingTour";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addMonths, subMonths, startOfMonth, isSameMonth, parseISO, isSameDay, isSameYear, isWithinInterval, addDays, subDays, addYears, subYears, startOfDay, endOfDay, endOfMonth, endOfYear } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePie, Pie, Cell } from 'recharts';
@@ -105,6 +106,7 @@ function AppContent() {
   const [ledgerFilter, setLedgerFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date>(new Date());
+  const [runTour, setRunTour] = useState(false);
   const [addAccountData, setAddAccountData] = useState({
     bankName: "",
     initialBalance: ""
@@ -539,10 +541,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans selection:bg-emerald-500/30">
+      <OnboardingTour activeView={activeView} setActiveView={setActiveView} run={runTour} setRun={setRunTour} />
       {/* Sidebar Navigation - Pro Rail */}
       <aside className="hidden md:flex w-20 lg:w-64 border-r border-border bg-card flex-col sticky top-0 h-screen z-50 transition-all duration-300">
-        <div className="p-4 lg:p-6 flex flex-col h-full">
-          <div className="flex items-center gap-3 mb-10">
+        <div className="p-4 lg:p-6 flex flex-col h-full overflow-hidden">
+          {/* Top Section - Fixed */}
+          <div className="flex items-center gap-3 mb-10 shrink-0">
             <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
               <Wallet className="w-6 h-6" />
             </div>
@@ -552,98 +556,108 @@ function AppContent() {
             </div>
           </div>
 
-          <nav className="space-y-2">
-            <NavItem 
-              icon={<LayoutDashboard className="w-5 h-5" />} 
-              label="Dashboard" 
-              active={activeView === 'dashboard'} 
-              onClick={() => setActiveView('dashboard')} 
-            />
-            <NavItem 
-              icon={<CreditCard className="w-5 h-5" />} 
-              label="Banks" 
-              active={activeView === 'accounts'} 
-              onClick={() => setActiveView('accounts')} 
-            />
-            <NavItem 
-              icon={<History className="w-5 h-5" />} 
-              label="Ledger" 
-              active={activeView === 'transactions'} 
-              onClick={() => setActiveView('transactions')} 
-            />
-            <NavItem 
-              icon={<CalcIcon className="w-5 h-5" />} 
-              label="Subscriptions" 
-              active={activeView === 'planning'} 
-              onClick={() => setActiveView('planning')} 
-            />
-            <NavItem 
-              icon={<Tags className="w-5 h-5" />} 
-              label="Categories" 
-              active={activeView === 'categories'} 
-              onClick={() => setActiveView('categories')} 
-            />
-            <NavItem 
-              icon={<Settings className="w-5 h-5" />} 
-              label="Settings" 
-              active={activeView === 'settings'} 
-              onClick={() => setActiveView('settings')} 
-            />
-          </nav>
+          {/* Middle Section - Scrollable */}
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 py-2">
+            <nav className="space-y-2" id="tour-nav">
+              <NavItem 
+                id="tour-dashboard"
+                icon={<LayoutDashboard className="w-5 h-5" />} 
+                label="Dashboard" 
+                active={activeView === 'dashboard'} 
+                onClick={() => setActiveView('dashboard')} 
+              />
+              <NavItem 
+                id="tour-banks"
+                icon={<CreditCard className="w-5 h-5" />} 
+                label="Banks" 
+                active={activeView === 'accounts'} 
+                onClick={() => setActiveView('accounts')} 
+              />
+              <NavItem 
+                id="tour-ledger"
+                icon={<History className="w-5 h-5" />} 
+                label="Ledger" 
+                active={activeView === 'transactions'} 
+                onClick={() => setActiveView('transactions')} 
+              />
+              <NavItem 
+                id="tour-subscriptions"
+                icon={<CalcIcon className="w-5 h-5" />} 
+                label="Subscriptions" 
+                active={activeView === 'planning'} 
+                onClick={() => setActiveView('planning')} 
+              />
+              <NavItem 
+                id="tour-categories"
+                icon={<Tags className="w-5 h-5" />} 
+                label="Categories" 
+                active={activeView === 'categories'} 
+                onClick={() => setActiveView('categories')} 
+              />
+              <NavItem 
+                id="tour-settings"
+                icon={<Settings className="w-5 h-5" />} 
+                label="Settings" 
+                active={activeView === 'settings'} 
+                onClick={() => setActiveView('settings')} 
+              />
+            </nav>
 
-          <div className="mt-10 hidden lg:block">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Accounts</p>
-              <button onClick={() => {
-                setPromptConfig({
-                  isOpen: true,
-                  title: "New Account",
-                  message: "Enter account name:",
-                  defaultValue: "",
-                  onConfirm: (name) => {
-                    if (name && name.trim()) handleAddAccount(name.trim());
-                  }
-                });
-              }} className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors">
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="space-y-1">
-              <button
-                onClick={() => {
-                  setSelectedAccountId("0");
-                  setActiveView('dashboard');
-                }}
-                className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedAccountId === "0" 
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
-                }`}
-              >
-                <PieChart className="w-3.5 h-3.5" />
-                <span className="truncate">All Accounts</span>
-              </button>
-              {accounts.map(acc => (
+            <div className="mt-10 hidden lg:block">
+              <div className="flex items-center justify-between mb-4 px-2">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Accounts</p>
+                <button onClick={() => {
+                  setPromptConfig({
+                    isOpen: true,
+                    title: "New Account",
+                    message: "Enter account name:",
+                    defaultValue: "",
+                    onConfirm: (name) => {
+                      if (name && name.trim()) handleAddAccount(name.trim());
+                    }
+                  });
+                }} className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors">
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="space-y-1">
                 <button
-                  key={acc.id}
                   onClick={() => {
-                    setSelectedAccountId(acc.id);
-                    if (activeView === 'accounts') setActiveView('dashboard');
+                    setSelectedAccountId("0");
+                    setActiveView('dashboard');
                   }}
                   className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                    selectedAccountId === acc.id 
+                    selectedAccountId === "0" 
                       ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
                   }`}
                 >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span className="truncate">{acc.name}</span>
+                  <PieChart className="w-3.5 h-3.5" />
+                  <span className="truncate">All Accounts</span>
                 </button>
-              ))}
+                {accounts.map(acc => (
+                  <button
+                    key={acc.id}
+                    onClick={() => {
+                      setSelectedAccountId(acc.id);
+                      if (activeView === 'accounts') setActiveView('dashboard');
+                    }}
+                    className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
+                      selectedAccountId === acc.id 
+                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span className="truncate">{acc.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-border">
+          {/* Bottom Section - Fixed */}
+          <div className="mt-auto pt-6 border-t border-border shrink-0">
             <div className="flex items-center justify-between mb-6 px-2 hidden lg:flex">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Theme</span>
               <ThemeToggle />
@@ -675,7 +689,7 @@ function AppContent() {
           <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
               {/* Filter Modes */}
-              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
+              <div id="tour-filters" className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5 overflow-x-auto no-scrollbar w-full sm:w-auto justify-center sm:justify-start">
                 {(['day', 'month', 'year', 'custom'] as const).map((mode) => (
                   <button
                     key={mode}
@@ -742,7 +756,7 @@ function AppContent() {
             </div>
 
             <div className="flex items-center gap-3 w-full lg:flex-1">
-              <div className="relative flex-1">
+              <div className="relative flex-1" id="tour-search">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input 
                   type="text" 
@@ -797,8 +811,16 @@ function AppContent() {
               </div>
               
               <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setRunTour(true)}
+                  className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-emerald-500 transition-all"
+                  title="Take the tour"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
                 <ReportExport transactions={filteredTransactions} />
                 <button 
+                  id="tour-new-entry"
                   onClick={() => setShowForm(!showForm)}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 whitespace-nowrap"
                 >
@@ -849,10 +871,10 @@ function AppContent() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-[2rem] w-full lg:w-auto overflow-hidden">
+                        <div id="tour-balance" className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-[2rem] w-full lg:w-auto overflow-hidden">
                           <div className="space-y-1 min-w-0">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Liquidity</p>
-                            <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter text-foreground truncate">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                            <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter text-foreground break-all sm:break-normal">₹{actualCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                           </div>
                           <div className="hidden sm:block w-px h-12 bg-emerald-500/20 shrink-0" />
                           <div className="flex gap-8 sm:gap-12 shrink-0">
@@ -900,7 +922,7 @@ function AppContent() {
 
                 {/* Advanced Insights Section */}
                 {user && (
-                  <section className="space-y-8">
+                  <section id="tour-insights" className="space-y-8">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h2 className="text-2xl font-bold tracking-tight">Financial Insights</h2>
@@ -912,7 +934,7 @@ function AppContent() {
                 )}
 
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                  <div className="xl:col-span-8 space-y-8">
+                  <div id="tour-activity" className="xl:col-span-8 space-y-8">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h2 className="text-2xl font-bold tracking-tight">Recent Activity</h2>
@@ -962,7 +984,7 @@ function AppContent() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-8 md:space-y-12"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" id="tour-banks-header">
                   <div>
                     <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">My Banks & Wallets</h2>
                     <div className="flex items-center gap-2 mt-1">
@@ -975,6 +997,7 @@ function AppContent() {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button 
+                      id="tour-banks-refresh"
                       onClick={handleRefresh}
                       disabled={isSyncing}
                       className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium disabled:opacity-50"
@@ -983,6 +1006,7 @@ function AppContent() {
                       {isSyncing ? 'Syncing...' : 'Refresh'}
                     </button>
                     <button 
+                      id="tour-banks-transfer"
                       onClick={() => setShowTransfer(true)}
                       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
                     >
@@ -1138,7 +1162,7 @@ function AppContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="tour-banks-grid">
                   {filteredAccountBalances.map(acc => (
                     <div 
                       key={acc.id} 
@@ -1202,15 +1226,15 @@ function AppContent() {
                   </div>
                 </div>
 
-                <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-12 text-center">
-                  <h3 className="text-2xl font-bold tracking-tighter mb-4">Total Net Worth (Current)</h3>
-                  <p className="text-6xl font-bold tracking-tighter text-emerald-500">
+                <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 text-center" id="tour-banks-networth">
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tighter mb-4">Total Net Worth (Current)</h3>
+                  <p className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-emerald-500 break-all sm:break-normal">
                     ₹{totalNetWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-4 max-w-md mx-auto">
                     This is your actual current balance across all accounts, including initial balances and all transactions recorded to date.
                   </p>
-                  <div className="mt-8 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-8">
+                  <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Period Snapshot</p>
                       <p className="text-xl font-bold">₹{filteredAccountBalances.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString()}</p>
@@ -1235,12 +1259,12 @@ function AppContent() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6" id="tour-ledger-header">
                   <div>
                     <h2 className="text-4xl font-bold tracking-tighter">Financial Ledger</h2>
                     <p className="text-sm text-muted-foreground mt-1">Detailed history of your income and expenditures.</p>
                   </div>
-                  <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
+                  <div className="flex bg-muted/50 p-1 rounded-xl border border-border" id="tour-ledger-filters">
                     {(['all', 'income', 'expense'] as const).map((type) => (
                       <button
                         key={type}
@@ -1256,7 +1280,7 @@ function AppContent() {
                     ))}
                   </div>
                 </div>
-                <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
+                <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm" id="tour-ledger-table">
                   <AccountGrid 
                     transactions={filteredTransactions.filter(t => {
                       if (ledgerFilter === 'all') return true;
@@ -1276,6 +1300,7 @@ function AppContent() {
             {activeView === 'planning' && (
               <motion.div
                 key="planning"
+                id="tour-planning-view"
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
@@ -1292,13 +1317,14 @@ function AppContent() {
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-6xl mx-auto"
               >
-                <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center justify-between mb-12" id="tour-categories-header">
                   <div>
                     <h2 className="text-4xl font-bold tracking-tighter">Categories</h2>
                     <p className="text-sm text-muted-foreground mt-1">Organize your finances with custom categories.</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <button 
+                      id="tour-categories-new"
                       onClick={() => {
                         setPromptConfig({
                           isOpen: true,
@@ -1317,7 +1343,7 @@ function AppContent() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6" id="tour-categories-grid">
                   {categories.map(cat => {
                     const catStat = stats?.categoryStats.find(s => s.category === cat.name);
                     return (
@@ -1379,6 +1405,7 @@ function AppContent() {
             {activeView === 'settings' && (
               <motion.div 
                 key="settings"
+                id="tour-settings-view"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -1443,14 +1470,6 @@ function AppContent() {
                     </div>
 
                     <div className="space-y-6">
-                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
-                        <div>
-                          <p className="text-sm font-bold">Display Theme</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Light / Dark Mode</p>
-                        </div>
-                        <ThemeToggle />
-                      </div>
-                      
                       <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
                         <div>
                           <p className="text-sm font-bold">Currency Symbol</p>
@@ -1669,9 +1688,10 @@ function AppContent() {
   );
 }
 
-function NavItem({ icon, label, active, onClick }: { icon: ReactNode, label: string, active: boolean, onClick: () => void }) {
+function NavItem({ id, icon, label, active, onClick }: { id?: string, icon: ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
     <button 
+      id={id}
       onClick={onClick}
       className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all duration-300 group relative ${
         active 
