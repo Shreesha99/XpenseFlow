@@ -197,14 +197,14 @@ export default function AccountGrid({
           </div>
         </div>
       )}
-      <div className="hidden md:flex items-center justify-between gap-4 p-4 border border-border rounded-3xl bg-gradient-to-b from-card to-card/50 backdrop-blur-xl mb-4 shadow-sm">
+      <div className="hidden md:flex items-center justify-between gap-4 p-4 border border-border rounded-3xl bg-linear-to-b from-card to-card/50 backdrop-blur-xl mb-4 shadow-sm z-99999">
         {/* LEFT SIDE */}
         <div className="flex items-center gap-3">
           <CustomSelect
             options={typeOptions}
             value={filterType}
             onChange={(v) => setFilterType(v as any)}
-            className="w-[160px]"
+            className="w-40"
             showDefaultIcon={false}
           />
 
@@ -212,14 +212,14 @@ export default function AccountGrid({
             options={modeOptions}
             value={filterMode}
             onChange={(v) => setFilterMode(v as any)}
-            className="w-[160px]"
+            className="w-40"
           />
 
           <CustomSelect
             options={accountOptions}
             value={filterAccount}
             onChange={(v) => setFilterAccount(v)}
-            className="w-[180px]"
+            className="w-45"
           />
         </div>
 
@@ -532,9 +532,9 @@ export default function AccountGrid({
       </div>
 
       {processedTransactions.length === 0 ? (
-        <div className="relative overflow-hidden p-10 md:p-14 rounded-3xl border border-border bg-gradient-to-b from-card to-muted/20 text-center">
+        <div className="relative overflow-hidden p-10 md:p-14 rounded-3xl border border-border bg-linear-to-b from-card to-muted/20 text-center">
           <div className="absolute inset-0 opacity-40 pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
+            <div className="absolute top-1/2 left-1/2 w-75 h-75 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
           </div>
 
           <div className="relative flex flex-col items-center gap-4">

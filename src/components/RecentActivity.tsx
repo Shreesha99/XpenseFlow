@@ -6,6 +6,7 @@ import {
   Smartphone,
   Banknote,
   Trash2,
+  Sheet,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -22,10 +23,28 @@ export default function RecentActivity({
 }: RecentActivityProps) {
   if (transactions.length === 0) {
     return (
-      <div className="p-12 text-center bg-muted/20 rounded-[2.5rem] border border-dashed border-border">
-        <p className="text-sm text-muted-foreground italic">
-          No recent activity found.
-        </p>
+      <div className="relative overflow-hidden p-10 md:p-14 rounded-[2.5rem] border border-border bg-linear-to-b from-card to-muted/20 text-center">
+        {/* glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 w-65 h-65 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
+        </div>
+
+        <div className="relative flex flex-col items-center gap-5">
+          {/* icon */}
+          <div className="w-14 h-14 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center">
+            <Sheet className="w-6 h-6 text-emerald-500" />
+          </div>
+
+          {/* text */}
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-foreground">
+              No recent activity
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Your transactions will appear here once you start tracking
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

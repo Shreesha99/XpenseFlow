@@ -6,6 +6,7 @@ import {
   Plus,
   PieChart,
   X,
+  Banknote,
 } from "lucide-react";
 import { format } from "date-fns";
 import BankLogo from "../ui/BankLogo";
@@ -121,7 +122,6 @@ export default function AccountsView({
           </button>
         </div>
       </div>
-
       {showAddAccount && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -222,262 +222,306 @@ export default function AccountsView({
           </form>
         </motion.div>
       )}
+      {filteredAccountBalances.length === 0 ? (
+        <div className="relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-border bg-linear-to-b from-card to-muted/20 text-center">
+          {/* glow background */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 w-[320px] h-80 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8 space-y-8">
-          <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-bold tracking-tight">
-                  Where is my money?
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  A breakdown of your savings across different places.
+          <div className="relative flex flex-col items-center gap-6">
+            {/* icon */}
+            <div className="w-16 h-16 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center shadow-sm">
+              <Banknote className="w-7 h-7 text-emerald-500" />
+            </div>
+
+            {/* text */}
+            <div className="space-y-2">
+              <p className="text-xl font-bold tracking-tight text-foreground">
+                No accounts yet
+              </p>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Start building your financial overview by adding your first bank
+                or wallet.
+              </p>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={() => {
+                setShowAddAccount(true);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="mt-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition active:scale-95"
+            >
+              Add Your First Account
+            </button>
+
+            {/* subtle hint */}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              Takes less than 10 seconds
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-8 space-y-8">
+              <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl font-bold tracking-tight">
+                      Where is my money?
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      A breakdown of your savings across different places.
+                    </p>
+                  </div>
+                  <PieChart className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="h-75 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={filteredAccountBalances}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="rgba(255,255,255,0.05)"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          fill: "currentColor",
+                          opacity: 0.5,
+                        }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          fill: "currentColor",
+                          opacity: 0.5,
+                        }}
+                        tickFormatter={(value) => `₹${value / 1000}k`}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "rgba(16,185,129,0.05)" }}
+                        contentStyle={{
+                          backgroundColor: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "16px",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                        }}
+                      />
+                      <Bar
+                        dataKey="balance"
+                        fill="var(--emerald-500)"
+                        radius={[8, 8, 0, 0]}
+                        fillOpacity={0.8}
+                        className="fill-emerald-500"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 space-y-8">
+              <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 text-center flex flex-col justify-center h-full">
+                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">
+                  Total Cash (Snapshot)
                 </p>
-              </div>
-              <PieChart className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div className="h-75 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={filteredAccountBalances}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="rgba(255,255,255,0.05)"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      fill: "currentColor",
-                      opacity: 0.5,
-                    }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      fill: "currentColor",
-                      opacity: 0.5,
-                    }}
-                    tickFormatter={(value) => `₹${value / 1000}k`}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(16,185,129,0.05)" }}
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "16px",
-                      fontSize: "12px",
-                      fontWeight: "bold",
-                    }}
-                  />
-                  <Bar
-                    dataKey="balance"
-                    fill="var(--emerald-500)"
-                    radius={[8, 8, 0, 0]}
-                    fillOpacity={0.8}
-                    className="fill-emerald-500"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 text-center flex flex-col justify-center h-full">
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">
-              Total Cash (Snapshot)
-            </p>
-            <p className="text-5xl font-bold tracking-tighter text-foreground mb-4">
-              ₹
-              {filteredAccountBalances
-                .reduce((sum, acc) => sum + acc.balance, 0)
-                .toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-            </p>
-            <div className="h-px bg-emerald-500/10 w-full my-6" />
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Total Accounts
-                </span>
-                <span className="text-sm font-bold">
-                  {filteredAccountBalances.length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Average per Account
-                </span>
-                <span className="text-sm font-bold">
+                <p className="text-5xl font-bold tracking-tighter text-foreground mb-4">
                   ₹
-                  {Math.round(
-                    filteredAccountBalances.reduce(
-                      (sum, acc) => sum + acc.balance,
-                      0
-                    ) / (filteredAccountBalances.length || 1)
-                  ).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        id="tour-banks-grid"
-      >
-        {filteredAccountBalances.map((acc) => (
-          <div
-            key={acc.id}
-            onClick={() => {
-              setSelectedAccountId(acc.id);
-              setActiveView("dashboard");
-            }}
-            className="p-8 bg-card border border-border rounded-[2.5rem] hover:border-emerald-500/50 transition-all hover:shadow-2xl hover:shadow-emerald-500/5 group cursor-pointer relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
-
-            <div className="flex justify-between items-start mb-8 relative">
-              <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-                <BankLogo
-                  url={acc.logo_url}
-                  name={acc.name}
-                  className="w-14 h-14"
-                />
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
-                    Status
-                  </p>
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
-                      Active
+                  {filteredAccountBalances
+                    .reduce((sum, acc) => sum + acc.balance, 0)
+                    .toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                </p>
+                <div className="h-px bg-emerald-500/10 w-full my-6" />
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Total Accounts
+                    </span>
+                    <span className="text-sm font-bold">
+                      {filteredAccountBalances.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Average per Account
+                    </span>
+                    <span className="text-sm font-bold">
+                      ₹
+                      {Math.round(
+                        filteredAccountBalances.reduce(
+                          (sum, acc) => sum + acc.balance,
+                          0
+                        ) / (filteredAccountBalances.length || 1)
+                      ).toLocaleString()}
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteAccount(acc.id);
-                  }}
-                  className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-1 relative">
-              <h3 className="text-xl font-bold tracking-tight text-foreground">
-                {acc.name}
-              </h3>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Bank / Wallet
-              </p>
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-border/50 relative">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
-                Balance
-              </p>
-              <p
-                className={`text-3xl font-bold tracking-tighter ${
-                  acc.balance >= 0 ? "text-foreground" : "text-rose-500"
-                }`}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            id="tour-banks-grid"
+          >
+            {filteredAccountBalances.map((acc) => (
+              <div
+                key={acc.id}
+                onClick={() => {
+                  setSelectedAccountId(acc.id);
+                  setActiveView("dashboard");
+                }}
+                className="p-8 bg-card border border-border rounded-[2.5rem] hover:border-emerald-500/50 transition-all hover:shadow-2xl hover:shadow-emerald-500/5 group cursor-pointer relative overflow-hidden"
               >
-                ₹
-                {acc.balance.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
+
+                <div className="flex justify-between items-start mb-8 relative">
+                  <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+                    <BankLogo
+                      url={acc.logo_url}
+                      name={acc.name}
+                      className="w-14 h-14"
+                    />
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                        Status
+                      </p>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
+                          Active
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAccount(acc.id);
+                      }}
+                      className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1 relative">
+                  <h3 className="text-xl font-bold tracking-tight text-foreground">
+                    {acc.name}
+                  </h3>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Bank / Wallet
+                  </p>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-border/50 relative">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
+                    Balance
+                  </p>
+                  <p
+                    className={`text-3xl font-bold tracking-tighter ${
+                      acc.balance >= 0 ? "text-foreground" : "text-rose-500"
+                    }`}
+                  >
+                    ₹
+                    {acc.balance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            <div
+              onClick={() => {
+                setShowAddAccount(true);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="p-8 bg-muted/30 border border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-muted/50 hover:border-emerald-500/50 transition-all group cursor-pointer"
+            >
+              <div className="w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plus className="w-6 h-6 text-muted-foreground group-hover:text-emerald-500" />
+              </div>
+              <p className="text-sm font-bold text-muted-foreground group-hover:text-foreground">
+                Add New Bank
               </p>
             </div>
           </div>
-        ))}
 
-        <div
-          onClick={() => {
-            setShowAddAccount(true);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="p-8 bg-muted/30 border border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-muted/50 hover:border-emerald-500/50 transition-all group cursor-pointer"
-        >
-          <div className="w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Plus className="w-6 h-6 text-muted-foreground group-hover:text-emerald-500" />
-          </div>
-          <p className="text-sm font-bold text-muted-foreground group-hover:text-foreground">
-            Add New Bank
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="bg-emerald-500/5 border border-emerald-500/10 rounded-4xl sm:rounded-[2.5rem] p-6 sm:p-12 text-center"
-        id="tour-banks-networth"
-      >
-        <h3 className="text-xl sm:text-2xl font-bold tracking-tighter mb-4">
-          Total Net Worth (Current)
-        </h3>
-        <p className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-emerald-500 break-all sm:break-normal">
-          ₹
-          {totalNetWorth.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-          })}
-        </p>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-          This is your actual current balance across all accounts, including
-          initial balances and all transactions recorded to date.
-        </p>
-        <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
-          <div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-              Period Snapshot
-            </p>
-            <p className="text-xl font-bold">
+          <div
+            className="bg-emerald-500/5 border border-emerald-500/10 rounded-4xl sm:rounded-[2.5rem] p-6 sm:p-12 text-center"
+            id="tour-banks-networth"
+          >
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tighter mb-4">
+              Total Net Worth (Current)
+            </h3>
+            <p className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-emerald-500 break-all sm:break-normal">
               ₹
-              {filteredAccountBalances
-                .reduce((sum, acc) => sum + acc.balance, 0)
-                .toLocaleString()}
+              {totalNetWorth.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
             </p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-4 max-w-md mx-auto">
+              This is your actual current balance across all accounts, including
+              initial balances and all transactions recorded to date.
+            </p>
+            <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                  Period Snapshot
+                </p>
+                <p className="text-xl font-bold">
+                  ₹
+                  {filteredAccountBalances
+                    .reduce((sum, acc) => sum + acc.balance, 0)
+                    .toLocaleString()}
+                </p>
+              </div>
+              <div className="w-px h-8 bg-border hidden sm:block" />
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                  Net Change
+                </p>
+                <p
+                  className={`text-xl font-bold ${
+                    (stats?.summary.digital_credits || 0) +
+                      (stats?.summary.in_hand_credits || 0) -
+                      (stats?.summary.digital_expenses || 0) -
+                      (stats?.summary.in_hand_expenses || 0) >=
+                    0
+                      ? "text-emerald-500"
+                      : "text-rose-500"
+                  }`}
+                >
+                  ₹
+                  {(
+                    (stats?.summary.digital_credits || 0) +
+                    (stats?.summary.in_hand_credits || 0) -
+                    (stats?.summary.digital_expenses || 0) -
+                    (stats?.summary.in_hand_expenses || 0)
+                  ).toLocaleString()}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="w-px h-8 bg-border hidden sm:block" />
-          <div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-              Net Change
-            </p>
-            <p
-              className={`text-xl font-bold ${
-                (stats?.summary.digital_credits || 0) +
-                  (stats?.summary.in_hand_credits || 0) -
-                  (stats?.summary.digital_expenses || 0) -
-                  (stats?.summary.in_hand_expenses || 0) >=
-                0
-                  ? "text-emerald-500"
-                  : "text-rose-500"
-              }`}
-            >
-              ₹
-              {(
-                (stats?.summary.digital_credits || 0) +
-                (stats?.summary.in_hand_credits || 0) -
-                (stats?.summary.digital_expenses || 0) -
-                (stats?.summary.in_hand_expenses || 0)
-              ).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </motion.div>
   );
 }
