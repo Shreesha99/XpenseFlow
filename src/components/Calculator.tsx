@@ -29,6 +29,7 @@ interface CalculatorProps {
   currentBalance?: number;
   filterMode?: "day" | "month" | "year" | "custom";
   filterDate?: Date;
+  onCountChange?: (count: number) => void;
   customRange?: { start: Date; end: Date };
 }
 
@@ -57,6 +58,7 @@ export default function Calculator({
   filterMode = "month",
   filterDate = new Date(),
   customRange = { start: new Date(), end: new Date() },
+  onCountChange,
 }: CalculatorProps) {
   const [items, setItems] = useState<Subscription[]>([]);
 
@@ -80,6 +82,10 @@ export default function Calculator({
     window.addEventListener("add-subscription", handler);
     return () => window.removeEventListener("add-subscription", handler);
   }, []);
+
+  useEffect(() => {
+    onCountChange?.(items.length);
+  }, [items]);
 
   useEffect(() => {
     if (!auth.currentUser) return;

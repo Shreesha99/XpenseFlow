@@ -2,6 +2,7 @@ import Calculator from "../Calculator";
 import { Stats } from "../../types";
 import { motion } from "motion/react";
 import { Plus } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
   stats: Stats | null;
@@ -19,6 +20,7 @@ export default function SubscriptionsView({
   filterDate,
   customRange,
 }: Props) {
+  const [subCount, setSubCount] = useState(0);
   return (
     <motion.div
       key="planning"
@@ -80,10 +82,7 @@ export default function SubscriptionsView({
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
             Active Subscriptions
           </p>
-          <p className="text-2xl font-bold">
-            {/* you can pass count later */}
-            --
-          </p>
+          <p className="text-2xl font-bold">{subCount}</p>
         </div>
       </div>
 
@@ -94,6 +93,7 @@ export default function SubscriptionsView({
         filterMode={filterMode}
         filterDate={filterDate}
         customRange={customRange}
+        onCountChange={setSubCount}
       />
     </motion.div>
   );
