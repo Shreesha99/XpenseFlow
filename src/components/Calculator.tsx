@@ -11,7 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import CustomSelect from "./CustomSelect";
+import CustomSelect from "./shared/CustomSelect";
 
 interface Subscription {
   id: string;

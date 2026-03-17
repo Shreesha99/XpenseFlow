@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Transaction } from "../types";
+import { Transaction } from "../../types";
 import {
   AreaChart,
   Area,

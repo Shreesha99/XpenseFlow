@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Landmark } from "lucide-react";
-import { INDIAN_BANKS } from "../constants/banks";
+import { INDIAN_BANKS } from "../../constants/banks";
 
 type Props = {
   name: string;

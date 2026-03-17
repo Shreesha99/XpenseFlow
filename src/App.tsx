@@ -8,11 +8,11 @@ import {
   Summary,
 } from "./types";
 import TransactionForm from "./components/TransactionForm";
-import FloatingCalculator from "./components/FloatingCalculator";
+import FloatingCalculator from "./components/shared/FloatingCalculator";
 import ErrorBoundary from "./components/ErrorBoundary";
-import PromptModal from "./components/PromptModal";
-import ConfirmationModal from "./components/ConfirmationModal";
-import OnboardingTour from "./components/OnboardingTour";
+import PromptModal from "./components/modals/PromptModal";
+import ConfirmationModal from "./components/modals/ConfirmationModal";
+import OnboardingTour from "./components/ui/OnboardingTour";
 import { motion, AnimatePresence } from "motion/react";
 import {
   startOfMonth,
@@ -48,7 +48,7 @@ import SubscriptionsView from "./components/views/SubscriptionsView";
 import CategoriesView from "./components/views/CategoriesView";
 import TransactionsView from "./components/views/TransactionsView";
 import AccountsView from "./components/views/AccountsView";
-import TransferModal from "./components/TransferModal";
+import TransferModal from "./components/modals/TransferModal";
 import DashboardView from "./components/views/DashboardView";
 import TopBar from "./components/ui/TopBar";
 import AppLoader from "./components/ui/AppLoader";

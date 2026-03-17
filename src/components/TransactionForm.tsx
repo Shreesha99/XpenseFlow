@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { db, auth, collection, addDoc } from "../firebase";
-import CustomSelect from "./CustomSelect";
-import BankLogo from "./BankLogo";
+import CustomSelect from "./shared/CustomSelect";
+import BankLogo from "./ui/BankLogo";
 
 interface TransactionFormProps {
   onSuccess: () => void;

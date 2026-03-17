@@ -13,8 +13,8 @@ import {
 } from "../firebase";
 import { doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Account } from "../types";
-import CustomSelect from "./CustomSelect";
-import BankLogo from "./BankLogo";
+import CustomSelect from "./shared/CustomSelect";
+import BankLogo from "./ui/BankLogo";
 
 interface ExcelImportProps {
   onImport: () => void;

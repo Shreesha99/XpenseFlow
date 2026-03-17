@@ -4,8 +4,8 @@ import {
   PieChart,
   Calculator as CalcIcon,
 } from "lucide-react";
-import BankLogo from "../BankLogo";
-import DashboardInsights from "../DashboardInsights";
+import BankLogo from "../ui/BankLogo";
+import DashboardInsights from "../ui/DashboardInsights";
 import RecentActivity from "../RecentActivity";
 import CategorySummary from "../CategorySummary";
 import Calculator from "../Calculator";

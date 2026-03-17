@@ -8,8 +8,8 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
-import BankLogo from "../BankLogo";
-import CustomSelect from "../CustomSelect";
+import BankLogo from "../ui/BankLogo";
+import CustomSelect from "../shared/CustomSelect";
 import { INDIAN_BANKS } from "../../constants/banks";
 import {
   ResponsiveContainer,

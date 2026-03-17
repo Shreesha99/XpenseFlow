@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import ThemeToggle from "../ThemeToggle";
-import BankLogo from "../BankLogo";
+import BankLogo from "./BankLogo";
 import { User } from "../../firebase";
 
 type View =

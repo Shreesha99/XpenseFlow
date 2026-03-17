@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import ExcelImport from "../ExcelImport";
-import BankLogo from "../BankLogo";
+import BankLogo from "../ui/BankLogo";
 
 type Props = {
   user: any;

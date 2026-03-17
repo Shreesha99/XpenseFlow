@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import { X, ArrowRightLeft, CheckCircle2, AlertCircle } from "lucide-react";
-import CustomSelect from "./CustomSelect";
-import BankLogo from "./BankLogo";
-import { Account } from "../types";
+import CustomSelect from "../shared/CustomSelect";
+import BankLogo from "../ui/BankLogo";
+import { Account } from "../../types";
 
 type Props = {
   showTransfer: boolean;
