@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Stats } from "../types";
-import { motion, AnimatePresence } from "motion/react";
-import { CreditCard, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { CreditCard, AlertCircle, Plus, Trash2, Repeat } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -263,20 +262,42 @@ export default function Calculator({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8 space-y-6">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
-              <CreditCard className="w-10 h-10 text-muted-foreground opacity-40" />
+            <div className="relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-border bg-linear-to-b from-card to-muted/20 text-center">
+              {/* glow */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/2 w-75 h-75 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
+              </div>
 
-              <p className="text-sm text-muted-foreground">
-                No subscriptions yet
-              </p>
+              <div className="relative flex flex-col items-center gap-6">
+                {/* icon */}
+                <div className="w-16 h-16 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center">
+                  <Repeat className="w-7 h-7 text-emerald-500" />
+                </div>
 
-              <button
-                onClick={addSubscription}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold"
-              >
-                <Plus className="w-4 h-4" />
-                Add First Subscription
-              </button>
+                {/* text */}
+                <div className="space-y-2">
+                  <p className="text-xl font-bold tracking-tight text-foreground">
+                    No subscriptions yet
+                  </p>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    Add recurring expenses to track your commitments
+                    automatically.
+                  </p>
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={addSubscription}
+                  className="mt-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition active:scale-95"
+                >
+                  Add First Subscription
+                </button>
+
+                {/* hint */}
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  Helps predict your future balance
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

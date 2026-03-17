@@ -1,4 +1,4 @@
-import { Download, FileText, Table } from "lucide-react";
+import { FileText, Table } from "lucide-react";
 import { Transaction } from "../types";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -11,95 +11,131 @@ interface ReportExportProps {
 export default function ReportExport({ transactions }: ReportExportProps) {
   const exportPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(20);
     doc.text("Account Transaction Report", 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Generated on ${format(new Date(), "PPP")}`, 14, 30);
 
-    const tableData = transactions.map(t => [
-      t.date ? format(new Date(t.date), "dd MMM yyyy") : '—',
+    const tableData = transactions.map((t) => [
+      t.date ? format(new Date(t.date), "dd MMM yyyy") : "—",
       t.title,
       t.type.toUpperCase(),
       t.mode.toUpperCase(),
       t.category,
-      `INR ${t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+      `INR ${t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
     ]);
 
     autoTable(doc, {
       startY: 40,
-      head: [['Date', 'Title', 'Type', 'Mode', 'Category', 'Amount']],
+      head: [["Date", "Title", "Type", "Mode", "Category", "Amount"]],
       body: tableData,
-      theme: 'grid',
-      headStyles: { 
-        fillColor: [16, 185, 129], 
+      theme: "grid",
+      headStyles: {
+        fillColor: [16, 185, 129],
         textColor: [255, 255, 255],
         fontSize: 10,
-        fontStyle: 'bold',
-        halign: 'center'
+        fontStyle: "bold",
+        halign: "center",
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 9,
-        textColor: [50, 50, 50]
+        textColor: [50, 50, 50],
       },
       columnStyles: {
-        5: { halign: 'right', fontStyle: 'bold' }
+        5: { halign: "right", fontStyle: "bold" },
       },
       alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      }
+        fillColor: [245, 245, 245],
+      },
     });
 
-    const totalCredits = transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
-    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    
+    const totalCredits = transactions
+      .filter((t) => t.type === "credit")
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0);
+
     const finalY = (doc as any).lastAutoTable.finalY + 15;
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Summary Statistics`, 14, finalY - 5);
-    
+
     doc.setTextColor(0);
     doc.setFontSize(11);
     doc.text(`Total Income:`, 14, finalY);
-    doc.text(`INR ${totalCredits.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY, { align: 'right' });
-    
+    doc.text(
+      `INR ${totalCredits.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+      })}`,
+      100,
+      finalY,
+      { align: "right" }
+    );
+
     doc.text(`Total Outflow:`, 14, finalY + 7);
-    doc.text(`INR ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY + 7, { align: 'right' });
-    
+    doc.text(
+      `INR ${totalExpenses.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+      })}`,
+      100,
+      finalY + 7,
+      { align: "right" }
+    );
+
     doc.setDrawColor(200);
     doc.line(14, finalY + 10, 100, finalY + 10);
-    
+
     doc.setFontSize(12);
     doc.setTextColor(16, 185, 129);
     doc.text(`Current Balance:`, 14, finalY + 17);
-    doc.text(`INR ${(totalCredits - totalExpenses).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 100, finalY + 17, { align: 'right' });
+    doc.text(
+      `INR ${(totalCredits - totalExpenses).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+      })}`,
+      100,
+      finalY + 17,
+      { align: "right" }
+    );
 
     doc.save(`account-report-${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
 
   const exportCSV = () => {
-    const headers = ["Date", "Title", "Type", "Mode", "Category", "Amount", "Description"];
-    const rows = transactions.map(t => [
+    const headers = [
+      "Date",
+      "Title",
+      "Type",
+      "Mode",
+      "Category",
+      "Amount",
+      "Description",
+    ];
+    const rows = transactions.map((t) => [
       t.date,
       `"${t.title}"`,
       t.type,
       t.mode,
       t.category,
       t.amount,
-      `"${t.description || ""}"`
+      `"${t.description || ""}"`,
     ]);
 
     const csvContent = [
       headers.join(","),
-      ...rows.map(row => row.join(","))
+      ...rows.map((row) => row.join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `account-data-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.setAttribute(
+      "download",
+      `account-data-${format(new Date(), "yyyy-MM-dd")}.csv`
+    );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();

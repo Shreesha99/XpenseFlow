@@ -2,10 +2,10 @@ import { Transaction, Stats, Account } from "../types";
 import { format } from "date-fns";
 import {
   Trash2,
-  History,
   Smartphone,
   Banknote,
   ChevronDown,
+  BookOpen,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import CustomSelect from "./shared/CustomSelect";
@@ -539,7 +539,7 @@ export default function AccountGrid({
 
           <div className="relative flex flex-col items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center">
-              <History className="w-6 h-6 text-muted-foreground opacity-60" />
+              <BookOpen className="w-6 h-6 text-muted-foreground opacity-60" />
             </div>
 
             <div className="space-y-1">

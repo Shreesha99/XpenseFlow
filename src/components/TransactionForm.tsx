@@ -9,9 +9,7 @@ import {
   X,
   AlertCircle,
   Tags,
-  CreditCard,
   Info,
-  Text,
   Type,
   Calendar,
 } from "lucide-react";

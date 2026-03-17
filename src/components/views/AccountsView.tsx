@@ -6,7 +6,7 @@ import {
   Plus,
   PieChart,
   X,
-  Banknote,
+  Landmark,
 } from "lucide-react";
 import { format } from "date-fns";
 import BankLogo from "../ui/BankLogo";
@@ -232,7 +232,7 @@ export default function AccountsView({
           <div className="relative flex flex-col items-center gap-6">
             {/* icon */}
             <div className="w-16 h-16 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center shadow-sm">
-              <Banknote className="w-7 h-7 text-emerald-500" />
+              <Landmark className="w-7 h-7 text-emerald-500" />
             </div>
 
             {/* text */}

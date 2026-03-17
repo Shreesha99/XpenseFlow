@@ -52,24 +52,41 @@ export default function CategoriesView({
 
       {/* Empty State */}
       {categories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-3xl bg-muted/20">
-          <Tags className="w-10 h-10 text-muted-foreground mb-4" />
+        <div className="relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-border bg-linear-to-b from-card to-muted/20 text-center">
+          {/* glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 w-75 h-75 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
+          </div>
 
-          <h3 className="text-lg font-bold tracking-tight mb-1">
-            No Categories Yet
-          </h3>
+          <div className="relative flex flex-col items-center gap-6">
+            {/* icon */}
+            <div className="w-16 h-16 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center">
+              <Tags className="w-7 h-7 text-emerald-500" />
+            </div>
 
-          <p className="text-xs text-muted-foreground max-w-xs mb-6">
-            Categories help organize your spending and income.
-          </p>
+            {/* text */}
+            <div className="space-y-2">
+              <p className="text-xl font-bold tracking-tight text-foreground">
+                No categories yet
+              </p>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Create categories to organize your income and expenses clearly.
+              </p>
+            </div>
 
-          <button
-            onClick={onAdd}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Create First Category
-          </button>
+            {/* CTA */}
+            <button
+              onClick={onAdd}
+              className="mt-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition active:scale-95"
+            >
+              Create First Category
+            </button>
+
+            {/* hint */}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              Helps you track spending better
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
