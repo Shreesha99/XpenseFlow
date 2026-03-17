@@ -804,6 +804,8 @@ function AppContent() {
                 selectedAccountId={selectedAccountId}
                 handleDeleteAccount={handleDeleteAccount}
                 logOut={logOut}
+                setActiveView={setActiveView} // ✅ add this
+                setShowAddAccount={setShowAddAccount}
               />
             )}
           </AnimatePresence>

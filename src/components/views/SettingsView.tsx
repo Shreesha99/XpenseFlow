@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import ExcelImport from "../ExcelImport";
-import BankLogo from "../ui/BankLogo";
 
 type Props = {
   user: any;
@@ -18,6 +17,16 @@ type Props = {
   selectedAccountId: string;
   handleDeleteAccount: (id: string) => void;
   logOut: () => void;
+  setActiveView: (
+    view:
+      | "dashboard"
+      | "transactions"
+      | "planning"
+      | "categories"
+      | "settings"
+      | "accounts"
+  ) => void; // ✅
+  setShowAddAccount: (val: boolean) => void; // ✅
 };
 
 export default function SettingsView({
@@ -26,6 +35,8 @@ export default function SettingsView({
   selectedAccountId,
   handleDeleteAccount,
   logOut,
+  setActiveView,
+  setShowAddAccount,
 }: Props) {
   return (
     <motion.div
@@ -76,34 +87,61 @@ export default function SettingsView({
                   Existing Accounts
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {accounts.map((acc) => (
-                    <div
-                      key={acc.id}
-                      className="flex items-center justify-between p-4 bg-background border border-border rounded-2xl hover:border-emerald-500/30 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                          <BankLogo
-                            name={acc.name}
-                            url={acc.logo_url}
-                            className="w-6 h-6"
-                          />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold">{acc.name}</p>
-                          {/* <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            {acc.id === "1" ? "Primary" : "Secondary"}
-                          </p> */}
-                        </div>
+                  {accounts.length === 0 ? (
+                    <div className="col-span-full relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-dashed border-border bg-linear-to-b from-card to-muted/20 text-center">
+                      {/* glow */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 w-75 h-75 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/10 blur-3xl rounded-full" />
                       </div>
-                      <button
-                        onClick={() => handleDeleteAccount(acc.id)}
-                        className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                      <div className="relative flex flex-col items-center gap-6">
+                        {/* icon */}
+                        <div className="w-16 h-16 rounded-2xl bg-background/60 backdrop-blur border border-border flex items-center justify-center">
+                          <Landmark className="w-7 h-7 text-emerald-500" />
+                        </div>
+
+                        {/* text */}
+                        <div className="space-y-2">
+                          <p className="text-xl font-bold tracking-tight text-foreground">
+                            No accounts yet
+                          </p>
+                          <p className="text-sm text-muted-foreground max-w-sm">
+                            Add your first account to start managing your
+                            finances.
+                          </p>
+                        </div>
+
+                        {/* CTA */}
+                        <button
+                          onClick={() => {
+                            setActiveView("accounts");
+                            setShowAddAccount(true);
+
+                            setTimeout(() => {
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }, 50);
+                          }}
+                          className="mt-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition active:scale-95"
+                        >
+                          Add Account
+                        </button>
+
+                        {/* hint */}
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                          Manage your finances better
+                        </p>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    accounts.map((acc) => (
+                      <div
+                        key={acc.id}
+                        className="flex items-center justify-between p-4 bg-background border border-border rounded-2xl hover:border-emerald-500/30 transition-all group"
+                      >
+                        ...
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

@@ -93,7 +93,7 @@ export default function CustomSelect({
             <div className="p-1">
               {options.length === 0 ? (
                 <div className="p-4 text-center text-xs text-muted-foreground italic">
-                  No options available
+                  Nothing to show here yet
                 </div>
               ) : (
                 options.map((option) => (

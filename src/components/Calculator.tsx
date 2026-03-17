@@ -7,7 +7,9 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import CustomSelect from "./shared/CustomSelect";
@@ -74,11 +76,26 @@ export default function Calculator({
   };
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "subscriptions"), (snap) => {
-      const data = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Subscription, "id">),
-      }));
+    if (!auth.currentUser) return;
+
+    const q = query(
+      collection(db, "subscriptions"),
+      where("uid", "==", auth.currentUser.uid)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((d) => {
+        const raw = d.data() as any;
+
+        return {
+          id: d.id,
+          name: raw.name,
+          amount: raw.amount,
+          cycle: raw.cycle,
+          dueDay: raw.dueDay,
+          settledMonths: raw.settled || [],
+        };
+      });
       setItems(data);
     });
 
@@ -181,20 +198,18 @@ export default function Calculator({
       : [...currentMonths, monthKey];
 
     await updateDoc(ref, {
-      settledMonths: updatedMonths,
+      settled: updatedMonths,
     });
   };
 
   const addSubscription = async () => {
-    console.log("ADD CLICKED");
-
     await addDoc(collection(db, "subscriptions"), {
       name: "New Subscription",
       amount: 0,
       cycle: "monthly",
       dueDay: 1,
-      settledMonths: [],
-      uid: auth.currentUser?.uid,
+      settled: [],
+      uid: auth.currentUser.uid,
     });
   };
 
