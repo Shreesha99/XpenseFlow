@@ -1,33 +1,4 @@
-import { useEffect, useState, ReactNode, useMemo } from "react";
-import {
-  Wallet,
-  Plus,
-  Calculator as CalcIcon,
-  Tags,
-  LayoutDashboard,
-  History,
-  PieChart,
-  Settings,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  RotateCcw,
-  X,
-  ArrowRightLeft,
-  LogIn,
-  LogOut,
-  FileUp,
-  HelpCircle,
-  Moon,
-  ShieldCheck,
-  Lock,
-  User as UserIcon,
-  Landmark,
-  BookOpen,
-  Subscript,
-  Repeat,
-} from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Transaction,
   Stats,
@@ -37,52 +8,24 @@ import {
   Summary,
 } from "./types";
 import TransactionForm from "./components/TransactionForm";
-import AccountGrid from "./components/AccountGrid";
-import CategorySummary from "./components/CategorySummary";
-import Calculator from "./components/Calculator";
-import ReportExport from "./components/ReportExport";
-import ThemeToggle from "./components/ThemeToggle";
 import FloatingCalculator from "./components/FloatingCalculator";
 import ErrorBoundary from "./components/ErrorBoundary";
-import CustomSelect from "./components/CustomSelect";
 import PromptModal from "./components/PromptModal";
 import ConfirmationModal from "./components/ConfirmationModal";
-import SearchResults from "./components/SearchResults";
-import DashboardInsights from "./components/DashboardInsights";
-import RecentActivity from "./components/RecentActivity";
 import OnboardingTour from "./components/OnboardingTour";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  format,
-  addMonths,
-  subMonths,
   startOfMonth,
   isSameMonth,
   parseISO,
   isSameDay,
   isSameYear,
   isWithinInterval,
-  addDays,
-  subDays,
-  addYears,
-  subYears,
   startOfDay,
   endOfDay,
   endOfMonth,
   endOfYear,
 } from "date-fns";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart as RePie,
-  Pie,
-  Cell,
-} from "recharts";
 import {
   auth,
   db,
@@ -100,9 +43,18 @@ import {
   updateDoc,
   User,
 } from "./firebase";
-import SettingsView from "./components/SettingsView";
-import BankLogo from "./components/BankLogo";
-import { INDIAN_BANKS } from "./constants/banks";
+import SettingsView from "./components/views/SettingsView";
+import SubscriptionsView from "./components/views/SubscriptionsView";
+import CategoriesView from "./components/views/CategoriesView";
+import TransactionsView from "./components/views/TransactionsView";
+import AccountsView from "./components/views/AccountsView";
+import TransferModal from "./components/TransferModal";
+import DashboardView from "./components/views/DashboardView";
+import TopBar from "./components/ui/TopBar";
+import AppLoader from "./components/ui/AppLoader";
+import Sidebar from "./components/ui/Sidebar";
+import LoginScreen from "./components/ui/LoginScreen";
+import MobileBottomNav from "./components/ui/MobileBottomNav";
 
 type View =
   | "dashboard"
@@ -128,8 +80,12 @@ function AppContent() {
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
+  const [authLoading, setAuthLoading] = useState(true);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+  const [transferStatus, setTransferStatus] = useState<{
+    type: "idle" | "loading" | "success" | "error";
+    message?: string;
+  }>({ type: "idle" });
 
   // Date Filtering State
   const [filterMode, setFilterMode] = useState<
@@ -316,6 +272,8 @@ function AppContent() {
     return initialBalancesSum + transactionsSum;
   }, [accounts, transactions]);
 
+  const isAppLoading = authLoading || loading;
+
   // Derived Stats
   const stats = useMemo<Stats | null>(() => {
     if (!user) return null;
@@ -384,6 +342,7 @@ function AppContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
+      setAuthLoading(false);
       if (!u) {
         setTransactions([]);
         setAccounts([]);
@@ -531,19 +490,57 @@ function AppContent() {
 
   const handleTransfer = async () => {
     if (!user) return;
-    if (!transferData.from || !transferData.to || !transferData.amount) {
+
+    setTransferStatus({ type: "idle" });
+
+    if (!transferData.from) {
+      setTransferStatus({
+        type: "error",
+        message: "Select a source account",
+      });
       return;
     }
+
+    if (!transferData.to) {
+      setTransferStatus({
+        type: "error",
+        message: "Select a destination account",
+      });
+      return;
+    }
+
+    if (!transferData.amount) {
+      setTransferStatus({
+        type: "error",
+        message: "Enter an amount",
+      });
+      return;
+    }
+
     if (transferData.from === transferData.to) {
+      setTransferStatus({
+        type: "error",
+        message: "Cannot transfer to the same account",
+      });
+      return;
+    }
+
+    const amount = parseFloat(transferData.amount);
+
+    if (isNaN(amount) || amount <= 0) {
+      setTransferStatus({
+        type: "error",
+        message: "Enter a valid amount",
+      });
       return;
     }
 
     try {
-      const amount = parseFloat(transferData.amount);
+      setTransferStatus({ type: "loading" });
+
       const date = new Date().toISOString().slice(0, 10);
       const createdAt = new Date().toISOString();
 
-      // Create two transactions for the transfer
       await Promise.all([
         addDoc(collection(db, "transactions"), {
           title: `Transfer to ${
@@ -575,10 +572,22 @@ function AppContent() {
         }),
       ]);
 
-      setShowTransfer(false);
-      setTransferData({ from: "", to: "", amount: "", description: "" });
+      setTransferStatus({
+        type: "success",
+        message: "Transfer completed successfully",
+      });
+
+      setTimeout(() => {
+        setShowTransfer(false);
+        setTransferStatus({ type: "idle" });
+        setTransferData({ from: "", to: "", amount: "", description: "" });
+      }, 800);
     } catch (error) {
-      console.error("Transfer failed:", error);
+      console.error(error);
+      setTransferStatus({
+        type: "error",
+        message: "Transfer failed. Try again.",
+      });
     }
   };
 
@@ -631,67 +640,12 @@ function AppContent() {
     );
   }, [actualAccountBalances, selectedAccountId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-      </div>
-    );
+  if (isAppLoading) {
+    return <AppLoader />;
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 font-sans selection:bg-emerald-500/30 overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.05),transparent_70%)] pointer-events-none" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full space-y-8 text-center relative z-10"
-        >
-          <div className="w-20 h-20  rounded-4xl flex items-center justify-center  mx-auto mb-8">
-            <img src="/logo.svg" alt="logo" className="w-20 h-20" />
-          </div>
-
-          <div className="space-y-4">
-            <h1 className="text-5xl font-black tracking-tighter leading-none">
-              Xpense<span className="text-emerald-500"> Flow</span>
-            </h1>
-            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-              The ultimate financial command center. Track your wealth, analyze
-              spending, and master your money with real-time precision.
-            </p>
-          </div>
-
-          <div className="bg-card/50 backdrop-blur-xl border border-border p-8 rounded-[2.5rem] shadow-2xl space-y-6">
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold tracking-tight">
-                Access Command Center
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Sign in to unlock full financial tracking and analytics.
-              </p>
-            </div>
-
-            <button
-              onClick={signIn}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
-            >
-              <LogIn className="w-5 h-5" />
-              Sign in with Google
-            </button>
-
-            <div className="pt-4 border-t border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
-                Secure Cloud Infrastructure
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <LoginScreen signIn={signIn} />;
   }
 
   return (
@@ -703,1335 +657,137 @@ function AppContent() {
         setRun={setRunTour}
       />
       {/* Sidebar Navigation - Pro Rail */}
-      <aside className="hidden md:flex w-20 lg:w-64 border-r border-border bg-card flex-col sticky top-0 h-screen z-50 transition-all duration-300">
-        <div className="p-4 lg:p-6 flex flex-col h-full overflow-hidden">
-          {/* Top Section - Fixed */}
-          <div className="flex items-center gap-3 mb-10 shrink-0">
-            {/* <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
-              <Wallet className="w-6 h-6" />
-            </div> */}
-            <img src="/logo.svg" alt="logo" className="w-10 h-10" />
-            <div className="hidden lg:block overflow-hidden">
-              <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
-                XpenseFlow
-              </h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold whitespace-nowrap">
-                Command Center
-              </p>
-            </div>
-          </div>
-
-          {/* Middle Section - Scrollable */}
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 py-2">
-            <nav className="space-y-2" id="tour-nav">
-              <NavItem
-                id="tour-dashboard"
-                icon={<LayoutDashboard className="w-5 h-5" />}
-                label="Dashboard"
-                active={activeView === "dashboard"}
-                onClick={() => setActiveView("dashboard")}
-              />
-              <NavItem
-                id="tour-banks"
-                icon={<Landmark className="w-5 h-5" />}
-                label="Banks"
-                active={activeView === "accounts"}
-                onClick={() => setActiveView("accounts")}
-              />
-              <NavItem
-                id="tour-ledger"
-                icon={<BookOpen className="w-5 h-5" />}
-                label="Ledger"
-                active={activeView === "transactions"}
-                onClick={() => setActiveView("transactions")}
-              />
-              <NavItem
-                id="tour-subscriptions"
-                icon={<Repeat className="w-5 h-5" />}
-                label="Subscriptions"
-                active={activeView === "planning"}
-                onClick={() => setActiveView("planning")}
-              />
-              <NavItem
-                id="tour-categories"
-                icon={<Tags className="w-5 h-5" />}
-                label="Categories"
-                active={activeView === "categories"}
-                onClick={() => setActiveView("categories")}
-              />
-              <NavItem
-                id="tour-settings"
-                icon={<Settings className="w-5 h-5" />}
-                label="Settings"
-                active={activeView === "settings"}
-                onClick={() => setActiveView("settings")}
-              />
-            </nav>
-
-            <div className="mt-10 hidden lg:block">
-              <div className="flex items-center justify-between mb-4 px-2">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                  Accounts
-                </p>
-                <button
-                  onClick={() => {
-                    setActiveView("accounts");
-                    setShowAddAccount(true);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="text-emerald-500 hover:text-emerald-400 p-1 hover:bg-emerald-500/10 rounded-md transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="space-y-1">
-                <button
-                  onClick={() => {
-                    setSelectedAccountId("all");
-                    setActiveView("dashboard");
-                  }}
-                  className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                    selectedAccountId === "all"
-                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
-                  }`}
-                >
-                  <PieChart className="w-3.5 h-3.5" />
-                  <span className="truncate">All Accounts</span>
-                </button>
-                {accounts.map((acc) => (
-                  <button
-                    key={acc.id}
-                    onClick={() => {
-                      setSelectedAccountId(acc.id);
-                      if (activeView === "accounts") setActiveView("dashboard");
-                    }}
-                    className={`flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-medium transition-all ${
-                      selectedAccountId === acc.id
-                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
-                    }`}
-                  >
-                    <BankLogo
-                      name={acc.name}
-                      url={acc.logo_url}
-                      className="w-4 h-4"
-                    />
-                    <span className="truncate">{acc.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Section - Fixed */}
-          <div className="mt-auto pt-6 border-t border-border shrink-0">
-            <div className="items-center justify-between mb-6 px-2 hidden lg:flex">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Theme
-              </span>
-              <ThemeToggle />
-            </div>
-            {user ? (
-              <div className="flex items-center justify-between gap-3 w-full p-2 rounded-xl bg-muted/30">
-                <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={
-                      user.photoURL ||
-                      `https://ui-avatars.com/api/?name=${
-                        user.displayName || user.email
-                      }&background=10b981&color=fff`
-                    }
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full border border-border shrink-0"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="hidden lg:block min-w-0">
-                    <p className="text-[10px] font-bold text-foreground truncate">
-                      {user.displayName || "User"}
-                    </p>
-                    <p className="text-[8px] text-muted-foreground truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={logOut}
-                  className="p-2 text-muted-foreground hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-500/10"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={signIn}
-                className="flex items-center justify-center lg:justify-start gap-3 w-full p-3 text-emerald-500 hover:text-emerald-400 transition-colors text-sm rounded-xl hover:bg-emerald-500/10"
-              >
-                <LogIn className="w-5 h-5" />
-                <span className="hidden lg:block">Login</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </aside>
+      <Sidebar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        setSelectedAccountId={setSelectedAccountId}
+        setShowAddAccount={setShowAddAccount}
+        user={user}
+        logOut={logOut}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="min-h-0 lg:min-h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-1.5 lg:py-3 px-4 md:px-8">
-          <div className="max-w-400 mx-auto flex flex-col lg:flex-row items-center gap-1.5 lg:gap-4">
-            {/* Mobile Header Top Row - Isolated to Mobile */}
-            <div className="flex items-center justify-between w-full lg:hidden">
-              <div className="flex items-center gap-2">
-                {/* <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-                  <Wallet className="w-4 h-4" />
-                </div> */}
-                <img src="/logo.svg" alt="logo" className="w-10 h-10" />
-                <h1 className="text-xs font-bold tracking-tight text-foreground">
-                  XpenseFlow
-                </h1>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ThemeToggle />
-                {user && (
-                  <div className="flex items-center gap-1.5">
-                    <img
-                      src={
-                        user.photoURL ||
-                        `https://ui-avatars.com/api/?name=${
-                          user.displayName || user.email
-                        }&background=10b981&color=fff`
-                      }
-                      alt="Profile"
-                      className="w-6 h-6 rounded-full border border-border"
-                      referrerPolicy="no-referrer"
-                    />
-                    <button
-                      onClick={logOut}
-                      className="p-1 text-muted-foreground hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-500/10"
-                      title="Logout"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Desktop Header Elements - Restored to Original Design */}
-            <div className="hidden lg:flex items-center gap-3 w-full lg:w-auto">
-              {/* Filter Modes - Desktop */}
-              <div
-                id="tour-filters"
-                className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-0.5"
-              >
-                {(["day", "month", "year", "custom"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setFilterMode(mode)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                      filterMode === mode
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-
-              {/* Date Switcher - Desktop */}
-              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl p-1">
-                {filterMode !== "custom" ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (filterMode === "day")
-                          setFilterDate(subDays(filterDate, 1));
-                        if (filterMode === "month")
-                          setFilterDate(subMonths(filterDate, 1));
-                        if (filterMode === "year")
-                          setFilterDate(subYears(filterDate, 1));
-                      }}
-                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="text-sm font-bold text-foreground min-w-30 text-center tracking-tight truncate">
-                      {filterMode === "day" && format(filterDate, "dd MMM yy")}
-                      {filterMode === "month" && format(filterDate, "MMM yyyy")}
-                      {filterMode === "year" && format(filterDate, "yyyy")}
-                    </span>
-                    <button
-                      onClick={() => {
-                        if (filterMode === "day")
-                          setFilterDate(addDays(filterDate, 1));
-                        if (filterMode === "month")
-                          setFilterDate(addMonths(filterDate, 1));
-                        if (filterMode === "year")
-                          setFilterDate(addYears(filterDate, 1));
-                      }}
-                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                      Range
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={format(customRange.start, "yyyy-MM-dd")}
-                        onChange={(e) =>
-                          setCustomRange({
-                            ...customRange,
-                            start: new Date(e.target.value),
-                          })
-                        }
-                        className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
-                      />
-                      <span className="text-muted-foreground text-[10px]">
-                        -
-                      </span>
-                      <input
-                        type="date"
-                        value={format(customRange.end, "yyyy-MM-dd")}
-                        onChange={(e) =>
-                          setCustomRange({
-                            ...customRange,
-                            end: new Date(e.target.value),
-                          })
-                        }
-                        className="bg-transparent border-none text-[10px] font-bold text-foreground focus:outline-none w-24"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Header Elements - Isolated and Optimized */}
-            <div className="flex lg:hidden flex-col items-center gap-1.5 w-full">
-              {/* Mobile Account Switcher */}
-              <div className="w-full overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setSelectedAccountId("all")}
-                    className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                      selectedAccountId === "all"
-                        ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
-                        : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
-                    }`}
-                  >
-                    All Accounts
-                  </button>
-                  {accounts.map((acc) => (
-                    <button
-                      key={acc.id}
-                      onClick={() => setSelectedAccountId(acc.id)}
-                      className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                        selectedAccountId === acc.id
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
-                          : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
-                      }`}
-                    >
-                      {acc.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Combined Filters and Date Switcher for Mobile */}
-              <div className="flex items-center gap-1.5 w-full">
-                {/* Filter Modes */}
-                <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 overflow-x-auto no-scrollbar flex-1">
-                  {(["day", "month", "year", "custom"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setFilterMode(mode)}
-                      className={`px-2 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                        filterMode === mode
-                          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Date Switcher */}
-                <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 flex-1 justify-between">
-                  {filterMode !== "custom" ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          if (filterMode === "day")
-                            setFilterDate(subDays(filterDate, 1));
-                          if (filterMode === "month")
-                            setFilterDate(subMonths(filterDate, 1));
-                          if (filterMode === "year")
-                            setFilterDate(subYears(filterDate, 1));
-                        }}
-                        className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                      >
-                        <ChevronLeft className="w-3 h-3" />
-                      </button>
-                      <span className="text-[9px] font-bold text-foreground min-w-15 text-center tracking-tight truncate">
-                        {filterMode === "day" &&
-                          format(filterDate, "dd MMM yy")}
-                        {filterMode === "month" &&
-                          format(filterDate, "MMM yyyy")}
-                        {filterMode === "year" && format(filterDate, "yyyy")}
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (filterMode === "day")
-                            setFilterDate(addDays(filterDate, 1));
-                          if (filterMode === "month")
-                            setFilterDate(addMonths(filterDate, 1));
-                          if (filterMode === "year")
-                            setFilterDate(addYears(filterDate, 1));
-                        }}
-                        className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                      >
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5">
-                      <input
-                        type="date"
-                        value={format(customRange.start, "yyyy-MM-dd")}
-                        onChange={(e) =>
-                          setCustomRange({
-                            ...customRange,
-                            start: new Date(e.target.value),
-                          })
-                        }
-                        className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
-                      />
-                      <span className="text-muted-foreground text-[8px]">
-                        →
-                      </span>
-                      <input
-                        type="date"
-                        value={format(customRange.end, "yyyy-MM-dd")}
-                        onChange={(e) =>
-                          setCustomRange({
-                            ...customRange,
-                            end: new Date(e.target.value),
-                          })
-                        }
-                        className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 w-full lg:flex-1">
-              <div className="relative flex-1" id="tour-search">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search transactions, categories, amounts (>100)..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSearchResults(true);
-                  }}
-                  onFocus={() => setShowSearchResults(true)}
-                  className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setShowSearchResults(false);
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-
-                <AnimatePresence>
-                  {showSearchResults && searchQuery && (
-                    <div className="absolute top-full left-0 w-full mt-2 z-150">
-                      <div
-                        className="fixed inset-0 z-[-1]"
-                        onClick={() => setShowSearchResults(false)}
-                      />
-                      <SearchResults
-                        results={searchResults}
-                        accounts={accounts}
-                        searchQuery={searchQuery}
-                        onClose={() => setShowSearchResults(false)}
-                        onSelect={(t) => {
-                          // When a transaction is selected, we could scroll to it or show details
-                          // For now, let's just close the search and maybe filter the view to that month?
-                          const date = parseISO(String(t.date));
-                          setFilterDate(date);
-                          setFilterMode("month");
-                          setSelectedAccountId("all");
-                          setActiveView("transactions");
-                          setShowSearchResults(false);
-                          setSearchQuery("");
-                        }}
-                      />
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setRunTour(true)}
-                  className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-emerald-500 transition-all"
-                  title="Take the tour"
-                >
-                  <HelpCircle className="w-5 h-5" />
-                </button>
-                <ReportExport transactions={filteredTransactions} />
-                <button
-                  id="tour-new-entry"
-                  onClick={() => setShowForm(!showForm)}
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Entry</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <TopBar
+          showForm={showForm}
+          user={user}
+          accounts={accounts}
+          filterMode={filterMode}
+          setFilterMode={setFilterMode}
+          filterDate={filterDate}
+          setFilterDate={setFilterDate}
+          customRange={customRange}
+          setCustomRange={setCustomRange}
+          selectedAccountId={selectedAccountId}
+          setSelectedAccountId={setSelectedAccountId}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          showSearchResults={showSearchResults}
+          setShowSearchResults={setShowSearchResults}
+          searchResults={searchResults}
+          setActiveView={setActiveView}
+          setShowForm={setShowForm}
+          logOut={logOut}
+          runTour={runTour}
+          setRunTour={setRunTour}
+          filteredTransactions={filteredTransactions}
+        />
 
         <main className="flex-1 overflow-auto p-4 sm:p-8 lg:p-12 pb-32 md:pb-8">
           <AnimatePresence mode="wait">
             {activeView === "dashboard" && (
-              <motion.div
-                key="dashboard"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                className="space-y-12"
-              >
-                {/* Hero Section - Editorial Style */}
-                <section className="relative overflow-hidden bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-12">
-                  <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-                  <div className="relative">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 md:gap-12">
-                      <div className="space-y-4 md:space-y-6">
-                        <p className="font-display italic text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-foreground leading-[0.9] tracking-tighter">
-                          Financial <br />
-                          <span className="text-emerald-500">
-                            Intelligence.
-                          </span>
-                        </p>
-                        <p className="text-xs sm:text-sm text-muted-foreground max-w-md leading-relaxed">
-                          Your personal command center for wealth management.
-                          Track, analyze, and optimize your financial journey
-                          with real-time precision.
-                        </p>
-                      </div>
-
-                      <div
-                        id="tour-balance"
-                        className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 md:gap-12 bg-background/40 backdrop-blur-sm border border-emerald-500/10 p-6 sm:p-8 rounded-4xl w-full lg:w-auto overflow-hidden"
-                      >
-                        <div className="space-y-1 min-w-0">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                            Total Liquidity
-                          </p>
-                          <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter text-foreground break-all sm:break-normal">
-                            ₹
-                            {actualCurrentBalance.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                        </div>
-                        <div className="hidden sm:block w-px h-12 bg-emerald-500/20 shrink-0" />
-                        <div className="flex gap-8 sm:gap-12 shrink-0">
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em]">
-                              Inflow
-                            </p>
-                            <p className="text-xl sm:text-2xl font-bold tracking-tighter text-emerald-500">
-                              ₹{totalCredits.toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-[0.2em]">
-                              Outflow
-                            </p>
-                            <p className="text-xl sm:text-2xl font-bold tracking-tighter text-rose-500">
-                              ₹{totalExpenses.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bank Balances Widget */}
-                    {selectedAccountId === "all" &&
-                      filteredAccountBalances.length > 0 && (
-                        <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-emerald-500/10">
-                          <div className="flex items-center justify-between mb-6 sm:mb-8">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                              Bank Breakdown
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                                Live Sync
-                              </span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-                            {filteredAccountBalances.map((acc) => (
-                              <div
-                                key={acc.id}
-                                className="p-4 sm:p-6 bg-background/50 border border-emerald-500/10 rounded-2xl sm:rounded-3xl hover:border-emerald-500/30 transition-all group relative overflow-hidden"
-                              >
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full -translate-y-8 translate-x-8 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                                <div className="flex items-center gap-3 mb-3 sm:mb-4 relative">
-                                  <BankLogo
-                                    url={acc.logo_url}
-                                    name={acc.name}
-                                    className="w-6 h-6 sm:w-8 sm:h-8"
-                                  />
-                                  <p className="text-[10px] font-bold text-foreground truncate uppercase tracking-widest">
-                                    {acc.name}
-                                  </p>
-                                </div>
-                                <p
-                                  className={`text-base sm:text-lg font-bold tracking-tighter relative ${
-                                    acc.balance >= 0
-                                      ? "text-foreground"
-                                      : "text-rose-500"
-                                  }`}
-                                >
-                                  ₹
-                                  {acc.balance.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                  })}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                </section>
-
-                {/* Advanced Insights Section */}
-                <section id="tour-insights" className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h2 className="text-2xl font-bold tracking-tight">
-                        Financial Insights
-                      </h2>
-                      <p className="text-xs text-muted-foreground">
-                        Real-time analytics and spending patterns.
-                      </p>
-                    </div>
-                  </div>
-                  <DashboardInsights transactions={transactions} />
-                </section>
-
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                  <div id="tour-activity" className="xl:col-span-8 space-y-8">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h2 className="text-2xl font-bold tracking-tight">
-                          Recent Activity
-                        </h2>
-                        <p className="text-xs text-muted-foreground">
-                          Your latest financial movements across all modes.
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setActiveView("transactions")}
-                        className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors border-b border-emerald-500/20 pb-1"
-                      >
-                        View Full Ledger
-                      </button>
-                    </div>
-                    <RecentActivity
-                      transactions={filteredTransactions.slice(0, 6)}
-                      accounts={accounts}
-                      onDelete={handleDelete}
-                    />
-                  </div>
-
-                  <div className="xl:col-span-4 space-y-12">
-                    <section>
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                          Allocation
-                        </h2>
-                        <PieChart className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <CategorySummary stats={stats} />
-                    </section>
-
-                    <section>
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                          Forecast
-                        </h2>
-                        <CalcIcon className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
-                        <Calculator stats={stats} compact />
-                      </div>
-                    </section>
-                  </div>
-                </div>
-              </motion.div>
+              <DashboardView
+                actualCurrentBalance={actualCurrentBalance}
+                totalCredits={totalCredits}
+                totalExpenses={totalExpenses}
+                selectedAccountId={selectedAccountId}
+                filteredAccountBalances={filteredAccountBalances}
+                transactions={transactions}
+                filteredTransactions={filteredTransactions}
+                accounts={accounts}
+                stats={stats}
+                handleDelete={handleDelete}
+                setActiveView={setActiveView}
+              />
             )}
 
             {activeView === "accounts" && (
-              <motion.div
-                key="accounts"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-8 md:space-y-12"
-              >
-                <div
-                  className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  id="tour-banks-header"
-                >
-                  <div>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
-                      My Banks & Wallets
-                    </h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-sm text-muted-foreground">
-                        See how much money you have in each bank or wallet.
-                      </p>
-                      <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                        Last Synced: {format(lastSynced, "HH:mm:ss")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      id="tour-banks-refresh"
-                      onClick={handleRefresh}
-                      disabled={isSyncing}
-                      className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-xl hover:bg-accent transition-all text-sm font-medium disabled:opacity-50"
-                    >
-                      <RotateCcw
-                        className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
-                      />
-                      {isSyncing ? "Syncing..." : "Refresh"}
-                    </button>
-                    <button
-                      id="tour-banks-transfer"
-                      onClick={() => setShowTransfer(true)}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
-                    >
-                      <ArrowRightLeft className="w-4 h-4" />
-                      Transfer
-                    </button>
-                  </div>
-                </div>
-
-                {showAddAccount && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="bg-card p-8 rounded-[2.5rem] border border-border shadow-2xl space-y-6"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-xl font-bold tracking-tight">
-                          Add New Account
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                          Configure your bank or wallet
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setShowAddAccount(false)}
-                        className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const { bankName, initialBalance: initialBalanceStr } =
-                          addAccountData;
-                        const initialBalance =
-                          parseFloat(initialBalanceStr.replace(/,/g, "")) || 0;
-
-                        if (!bankName) return;
-
-                        const bank = INDIAN_BANKS.find(
-                          (b) => b.name === bankName
-                        );
-                        if (bank) {
-                          const bank = INDIAN_BANKS.find(
-                            (b) => b.name === bankName
-                          );
-                          if (bank) {
-                            handleAddAccount(
-                              bank.name,
-                              initialBalance,
-                              bank.logo || ""
-                            );
-                            setShowAddAccount(false);
-                            setAddAccountData({
-                              bankName: "",
-                              initialBalance: "",
-                            });
-                          } else if (bankName === "Other / Cash") {
-                            handleAddAccount(
-                              "Other / Cash",
-                              initialBalance,
-                              ""
-                            );
-                            setShowAddAccount(false);
-                            setAddAccountData({
-                              bankName: "",
-                              initialBalance: "",
-                            });
-                          }
-                        }
-                      }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                      <CustomSelect
-                        label="Select Bank"
-                        options={INDIAN_BANKS.map((b) => ({
-                          id: b.name,
-                          name: b.name,
-                          icon: <BankLogo name={b.name} className="w-4 h-4" />,
-                        }))}
-                        value={addAccountData.bankName}
-                        onChange={(val) =>
-                          setAddAccountData({
-                            ...addAccountData,
-                            bankName: val,
-                          })
-                        }
-                        placeholder="Choose a bank..."
-                      />
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
-                          Initial Balance (₹)
-                        </label>
-                        <input
-                          name="initialBalance"
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={addAccountData.initialBalance}
-                          onChange={(e) =>
-                            setAddAccountData({
-                              ...addAccountData,
-                              initialBalance: e.target.value,
-                            })
-                          }
-                          className="w-full bg-muted border border-border rounded-2xl px-4 py-4 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="md:col-span-2 w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
-                      >
-                        Create Account
-                      </button>
-                    </form>
-                  </motion.div>
-                )}
-
-                {/* Bank Insights Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                  <div className="lg:col-span-8 space-y-8">
-                    <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
-                      <div className="flex items-center justify-between mb-8">
-                        <div>
-                          <h3 className="text-xl font-bold tracking-tight">
-                            Where is my money?
-                          </h3>
-                          <p className="text-xs text-muted-foreground">
-                            A breakdown of your savings across different places.
-                          </p>
-                        </div>
-                        <PieChart className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div className="h-75 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={filteredAccountBalances}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              vertical={false}
-                              stroke="rgba(255,255,255,0.05)"
-                            />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                fill: "currentColor",
-                                opacity: 0.5,
-                              }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                fill: "currentColor",
-                                opacity: 0.5,
-                              }}
-                              tickFormatter={(value) => `₹${value / 1000}k`}
-                            />
-                            <Tooltip
-                              cursor={{ fill: "rgba(16,185,129,0.05)" }}
-                              contentStyle={{
-                                backgroundColor: "var(--card)",
-                                border: "1px solid var(--border)",
-                                borderRadius: "16px",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            />
-                            <Bar
-                              dataKey="balance"
-                              fill="var(--emerald-500)"
-                              radius={[8, 8, 0, 0]}
-                              fillOpacity={0.8}
-                              className="fill-emerald-500"
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 text-center flex flex-col justify-center h-full">
-                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">
-                        Total Cash (Snapshot)
-                      </p>
-                      <p className="text-5xl font-bold tracking-tighter text-foreground mb-4">
-                        ₹
-                        {filteredAccountBalances
-                          .reduce((sum, acc) => sum + acc.balance, 0)
-                          .toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
-                      </p>
-                      <div className="h-px bg-emerald-500/10 w-full my-6" />
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Total Accounts
-                          </span>
-                          <span className="text-sm font-bold">
-                            {filteredAccountBalances.length}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Average per Account
-                          </span>
-                          <span className="text-sm font-bold">
-                            ₹
-                            {Math.round(
-                              filteredAccountBalances.reduce(
-                                (sum, acc) => sum + acc.balance,
-                                0
-                              ) / (filteredAccountBalances.length || 1)
-                            ).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                  id="tour-banks-grid"
-                >
-                  {filteredAccountBalances.map((acc) => (
-                    <div
-                      key={acc.id}
-                      onClick={() => {
-                        setSelectedAccountId(acc.id);
-                        setActiveView("dashboard");
-                      }}
-                      className="p-8 bg-card border border-border rounded-[2.5rem] hover:border-emerald-500/50 transition-all hover:shadow-2xl hover:shadow-emerald-500/5 group cursor-pointer relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
-
-                      <div className="flex justify-between items-start mb-8 relative">
-                        <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-                          <BankLogo
-                            url={acc.logo_url}
-                            name={acc.name}
-                            className="w-14 h-14"
-                          />
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="text-right">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
-                              Status
-                            </p>
-                            <div className="flex items-center gap-1.5 justify-end">
-                              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                              <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
-                                Active
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteAccount(acc.id);
-                            }}
-                            className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 relative">
-                        <h3 className="text-xl font-bold tracking-tight text-foreground">
-                          {acc.name}
-                        </h3>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                          Bank / Wallet
-                        </p>
-                      </div>
-
-                      <div className="mt-8 pt-8 border-t border-border/50 relative">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
-                          Balance
-                        </p>
-                        <p
-                          className={`text-3xl font-bold tracking-tighter ${
-                            acc.balance >= 0
-                              ? "text-foreground"
-                              : "text-rose-500"
-                          }`}
-                        >
-                          ₹
-                          {acc.balance.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div
-                    onClick={() => {
-                      setShowAddAccount(true);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className="p-8 bg-muted/30 border border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-muted/50 hover:border-emerald-500/50 transition-all group cursor-pointer"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Plus className="w-6 h-6 text-muted-foreground group-hover:text-emerald-500" />
-                    </div>
-                    <p className="text-sm font-bold text-muted-foreground group-hover:text-foreground">
-                      Add New Bank
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className="bg-emerald-500/5 border border-emerald-500/10 rounded-4xl sm:rounded-[2.5rem] p-6 sm:p-12 text-center"
-                  id="tour-banks-networth"
-                >
-                  <h3 className="text-xl sm:text-2xl font-bold tracking-tighter mb-4">
-                    Total Net Worth (Current)
-                  </h3>
-                  <p className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-emerald-500 break-all sm:break-normal">
-                    ₹
-                    {totalNetWorth.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-                    This is your actual current balance across all accounts,
-                    including initial balances and all transactions recorded to
-                    date.
-                  </p>
-                  <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                        Period Snapshot
-                      </p>
-                      <p className="text-xl font-bold">
-                        ₹
-                        {filteredAccountBalances
-                          .reduce((sum, acc) => sum + acc.balance, 0)
-                          .toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="w-px h-8 bg-border hidden sm:block" />
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                        Net Change
-                      </p>
-                      <p
-                        className={`text-xl font-bold ${
-                          (stats?.summary.digital_credits || 0) +
-                            (stats?.summary.in_hand_credits || 0) -
-                            (stats?.summary.digital_expenses || 0) -
-                            (stats?.summary.in_hand_expenses || 0) >=
-                          0
-                            ? "text-emerald-500"
-                            : "text-rose-500"
-                        }`}
-                      >
-                        ₹
-                        {(
-                          (stats?.summary.digital_credits || 0) +
-                          (stats?.summary.in_hand_credits || 0) -
-                          (stats?.summary.digital_expenses || 0) -
-                          (stats?.summary.in_hand_expenses || 0)
-                        ).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              <AccountsView
+                filteredAccountBalances={filteredAccountBalances}
+                selectedAccountId={selectedAccountId}
+                setSelectedAccountId={setSelectedAccountId}
+                setActiveView={setActiveView}
+                handleDeleteAccount={handleDeleteAccount}
+                handleAddAccount={handleAddAccount}
+                handleTransfer={handleTransfer}
+                handleRefresh={handleRefresh}
+                isSyncing={isSyncing}
+                lastSynced={lastSynced}
+                showAddAccount={showAddAccount}
+                setShowAddAccount={setShowAddAccount}
+                showTransfer={showTransfer}
+                setShowTransfer={setShowTransfer}
+                addAccountData={addAccountData}
+                setAddAccountData={setAddAccountData}
+                totalNetWorth={totalNetWorth}
+                stats={stats}
+              />
             )}
 
             {activeView === "transactions" && (
+              <TransactionsView
+                transactions={filteredTransactions}
+                stats={stats}
+                accounts={accounts}
+                ledgerFilter={ledgerFilter}
+                setLedgerFilter={setLedgerFilter}
+                onDelete={handleDelete}
+                actualBalances={actualAccountBalances}
+                totalNetWorth={totalNetWorth}
+              />
+            )}
+
+            {activeView === "planning" && (
               <motion.div
-                key="transactions"
+                key="planning"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div
-                  className="flex flex-col md:flex-row md:items-center justify-between gap-6"
-                  id="tour-ledger-header"
-                >
-                  <div>
-                    <h2 className="text-4xl font-bold tracking-tighter">
-                      Financial Ledger
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Detailed history of your income and expenditures.
-                    </p>
-                  </div>
-                  <div
-                    className="flex bg-muted/50 p-1 rounded-xl border border-border"
-                    id="tour-ledger-filters"
-                  >
-                    {(["all", "income", "expense"] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setLedgerFilter(type)}
-                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
-                          ledgerFilter === type
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div id="tour-ledger-table">
-                  <AccountGrid
-                    transactions={filteredTransactions.filter((t) => {
-                      if (ledgerFilter === "all") return true;
-                      if (ledgerFilter === "income") return t.type === "credit";
-                      if (ledgerFilter === "expense")
-                        return t.type === "expense";
-                      return true;
-                    })}
-                    stats={stats}
-                    onDelete={handleDelete}
-                    actualBalances={actualAccountBalances}
-                    totalNetWorth={totalNetWorth}
-                  />
-                </div>
+                <SubscriptionsView
+                  stats={stats}
+                  currentBalance={actualCurrentBalance}
+                />
               </motion.div>
-            )}
-
-            {activeView === "planning" && (
-              <Calculator stats={stats} currentBalance={actualCurrentBalance} />
             )}
 
             {activeView === "categories" && (
-              <motion.div
-                key="categories"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="max-w-6xl mx-auto"
-              >
-                <div
-                  className="flex items-center justify-between mb-12"
-                  id="tour-categories-header"
-                >
-                  <div>
-                    <h2 className="text-4xl font-bold tracking-tighter">
-                      Categories
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Organize your finances with custom categories.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      id="tour-categories-new"
-                      onClick={() => {
-                        setPromptConfig({
-                          isOpen: true,
-                          title: "New Category",
-                          message: "Enter category name:",
-                          defaultValue: "",
-                          onConfirm: (name) => {
-                            if (name && name.trim())
-                              handleAddCategory(name.trim());
-                          },
-                        });
-                      }}
-                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Category
-                    </button>
-                  </div>
-                </div>
-                {categories.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-3xl bg-muted/20">
-                    <Tags className="w-10 h-10 text-muted-foreground mb-4" />
-
-                    <h3 className="text-lg font-bold tracking-tight mb-1">
-                      No Categories Yet
-                    </h3>
-
-                    <p className="text-xs text-muted-foreground max-w-xs mb-6">
-                      Categories help organize your spending and income. Create
-                      your first category to start tracking where your money
-                      goes.
-                    </p>
-
-                    <button
-                      onClick={() => {
-                        setPromptConfig({
-                          isOpen: true,
-                          title: "New Category",
-                          message: "Enter category name:",
-                          defaultValue: "",
-                          onConfirm: (name) => {
-                            if (name && name.trim())
-                              handleAddCategory(name.trim());
-                          },
-                        });
-                      }}
-                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Create First Category
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
-                    id="tour-categories-grid"
-                  >
-                    {categories.map((cat) => {
-                      const catStat = stats?.categoryStats.find(
-                        (s) => s.category === cat.name
-                      );
-                      return (
-                        <div
-                          key={cat.id}
-                          className="p-6 bg-card border border-border rounded-3xl hover:border-emerald-500/50 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                          <div className="flex justify-between items-start mb-6 relative">
-                            <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-all duration-500">
-                              <Tags className="w-6 h-6" />
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setPromptConfig({
-                                    isOpen: true,
-                                    title: "Edit Category",
-                                    message: "Enter new category name:",
-                                    defaultValue: cat.name,
-                                    onConfirm: async (name) => {
-                                      if (name && name.trim()) {
-                                        handleEditCategory(cat.id, name.trim());
-                                      }
-                                    },
-                                  });
-                                }}
-                                className="p-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-muted rounded-lg"
-                              >
-                                <Settings className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory(cat.id)}
-                                className="p-2 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-sm font-bold tracking-tight text-foreground relative">
-                            {cat.name}
-                          </p>
-                          {catStat ? (
-                            <div className="mt-4 pt-4 border-t border-border/50 space-y-1 relative">
-                              <div className="flex justify-between text-[9px] font-bold">
-                                <span className="text-emerald-500">INCOME</span>
-                                <span>
-                                  ₹{catStat.total_credit.toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-[9px] font-bold">
-                                <span className="text-rose-500">EXPENSE</span>
-                                <span>
-                                  ₹{catStat.total_expense.toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 relative">
-                              No activity
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </motion.div>
+              <CategoriesView
+                categories={categories}
+                stats={stats}
+                onAdd={() => {
+                  setPromptConfig({
+                    isOpen: true,
+                    title: "New Category",
+                    message: "Enter category name:",
+                    defaultValue: "",
+                    onConfirm: (name) => {
+                      if (name && name.trim()) handleAddCategory(name.trim());
+                    },
+                  });
+                }}
+                onEdit={(id, name) => handleEditCategory(id, name)}
+                onDelete={handleDeleteCategory}
+                openPrompt={(config) =>
+                  setPromptConfig({
+                    isOpen: true,
+                    ...config,
+                  })
+                }
+              />
             )}
 
             {activeView === "settings" && (
@@ -2048,48 +804,11 @@ function AppContent() {
       </div>
 
       {/* Mobile Navigation - Floating Island Style */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg z-100">
-        <nav className="bg-card/90 backdrop-blur-2xl border border-border h-16 rounded-2xl flex items-center justify-between px-2 shadow-2xl shadow-black/50">
-          <MobileNavItem
-            icon={<LayoutDashboard className="w-5 h-5" />}
-            active={activeView === "dashboard"}
-            onClick={() => setActiveView("dashboard")}
-          />
-          <MobileNavItem
-            icon={<Landmark className="w-5 h-5" />}
-            active={activeView === "accounts"}
-            onClick={() => setActiveView("accounts")}
-          />
-          <MobileNavItem
-            icon={<BookOpen className="w-5 h-5" />}
-            active={activeView === "transactions"}
-            onClick={() => setActiveView("transactions")}
-          />
-
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white -translate-y-6 shadow-xl shadow-emerald-500/40 active:scale-90 transition-transform shrink-0"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-
-          <MobileNavItem
-            icon={<Repeat className="w-5 h-5" />}
-            active={activeView === "planning"}
-            onClick={() => setActiveView("planning")}
-          />
-          <MobileNavItem
-            icon={<Tags className="w-5 h-5" />}
-            active={activeView === "categories"}
-            onClick={() => setActiveView("categories")}
-          />
-          <MobileNavItem
-            icon={<Settings className="w-5 h-5" />}
-            active={activeView === "settings"}
-            onClick={() => setActiveView("settings")}
-          />
-        </nav>
-      </div>
+      <MobileBottomNav
+        activeView={activeView}
+        setActiveView={setActiveView}
+        setShowForm={setShowForm}
+      />
 
       <FloatingCalculator />
 
@@ -2143,260 +862,17 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {/* Transfer Modal */}
-      <AnimatePresence>
-        {showTransfer && (
-          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowTransfer(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl md:text-2xl font-bold tracking-tighter text-foreground">
-                  Transfer Money
-                </h3>
-                <button
-                  onClick={() => setShowTransfer(false)}
-                  className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <TransferModal
+        transferStatus={transferStatus}
+        showTransfer={showTransfer}
+        setShowTransfer={setShowTransfer}
+        transferData={transferData}
+        setTransferData={setTransferData}
+        handleTransfer={handleTransfer}
+        accountBalances={accountBalances}
+      />
 
-              <div className="space-y-6">
-                <CustomSelect
-                  label="From Account"
-                  options={accountBalances.map((acc) => ({
-                    id: acc.id,
-                    name: `${acc.name} (₹${acc.balance.toLocaleString()})`,
-                    icon: (
-                      <BankLogo
-                        name={acc.name}
-                        url={acc.logo_url}
-                        className="w-4 h-4"
-                      />
-                    ),
-                  }))}
-                  value={transferData.from}
-                  onChange={(val) =>
-                    setTransferData({ ...transferData, from: val })
-                  }
-                  placeholder="Select Source..."
-                />
-
-                <div className="flex justify-center">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                    <ArrowRightLeft className="w-5 h-5 text-emerald-500 rotate-90" />
-                  </div>
-                </div>
-
-                <CustomSelect
-                  label="To Account"
-                  options={accountBalances.map((acc) => ({
-                    id: acc.id,
-                    name: `${acc.name} (₹${acc.balance.toLocaleString()})`,
-                    icon: (
-                      <BankLogo
-                        name={acc.name}
-                        url={acc.logo_url}
-                        className="w-4 h-4"
-                      />
-                    ),
-                  }))}
-                  value={transferData.to}
-                  onChange={(val) =>
-                    setTransferData({ ...transferData, to: val })
-                  }
-                  placeholder="Select Destination..."
-                />
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Amount
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={transferData.amount}
-                      onChange={(e) =>
-                        setTransferData({
-                          ...transferData,
-                          amount: e.target.value,
-                        })
-                      }
-                      className="w-full bg-muted/50 border border-border rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors font-mono text-foreground"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Note (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="What's this for?"
-                    value={transferData.description}
-                    onChange={(e) =>
-                      setTransferData({
-                        ...transferData,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-foreground"
-                  />
-                </div>
-
-                <button
-                  onClick={handleTransfer}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/20 mt-4"
-                >
-                  Confirm Transfer
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {loading && (
-        <div className="fixed inset-0 bg-background/90 backdrop-blur-md z-200 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-emerald-500/20 rounded-full" />
-              <div className="absolute inset-0 w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold tracking-[0.2em] text-emerald-500 uppercase mb-2">
-                Synchronizing
-              </p>
-              <p className="text-[10px] text-muted-foreground font-medium">
-                Accessing secure financial records...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NavItem({
-  id,
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  id?: string;
-  icon: ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      id={id}
-      onClick={onClick}
-      className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all duration-300 group relative ${
-        active
-          ? "bg-emerald-500/10 text-emerald-500 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.1)]"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-      }`}
-    >
-      <div
-        className={`transition-transform duration-500 ${
-          active ? "scale-110" : "group-hover:scale-110"
-        }`}
-      >
-        {icon}
-      </div>
-      <span className="hidden lg:block tracking-tight">{label}</span>
-      {active && (
-        <motion.div
-          layoutId="nav-active"
-          className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-r-full"
-        />
-      )}
-    </button>
-  );
-}
-
-function MobileNavItem({
-  icon,
-  active,
-  onClick,
-}: {
-  icon: ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`p-2.5 rounded-xl transition-all duration-300 ${
-        active
-          ? "text-emerald-500 bg-emerald-500/10 scale-110"
-          : "text-muted-foreground"
-      }`}
-    >
-      {icon}
-    </button>
-  );
-}
-
-function BalanceCard({
-  label,
-  amount,
-  color,
-  subLabel,
-  highlight,
-}: {
-  label: string;
-  amount: number;
-  color: string;
-  subLabel: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`p-8 rounded-4xl border transition-all duration-500 group relative overflow-hidden ${
-        highlight
-          ? "bg-emerald-500/5 border-emerald-500/20 shadow-2xl shadow-emerald-500/10"
-          : "bg-card border-border hover:border-emerald-500/30"
-      }`}
-    >
-      {highlight && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
-      )}
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">
-        {label}
-      </p>
-      <div className="flex items-baseline gap-2 relative">
-        <span className={`text-4xl font-bold tracking-tighter ${color}`}>
-          ₹
-          {amount.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </span>
-      </div>
-      <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-widest opacity-60 relative">
-        {subLabel}
-      </p>
+      {loading && <AppLoader />}
     </div>
   );
 }

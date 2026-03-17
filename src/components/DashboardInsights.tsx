@@ -33,6 +33,13 @@ export default function DashboardInsights({
   transactions,
 }: DashboardInsightsProps) {
   // 1. Cash Flow Data (Last 6 Months)
+  const getThemeColor = (variable: string) => {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue(variable)
+      .trim();
+  };
+  const emerald = getThemeColor("--emerald-500");
+  const amber = getThemeColor("--amber-500");
   const cashFlowData = useMemo(() => {
     const end = new Date();
     const start = subMonths(end, 5);
@@ -68,8 +75,8 @@ export default function DashboardInsights({
       .reduce((sum, t) => sum + t.amount, 0);
 
     return [
-      { name: "Digital", value: digital, color: "var(--emerald-500)" },
-      { name: "Cash", value: inHand, color: "var(--amber-500)" },
+      { name: "Digital", value: digital, color: emerald },
+      { name: "Cash", value: inHand, color: amber },
     ];
   }, [transactions]);
 
@@ -105,35 +112,19 @@ export default function DashboardInsights({
             <AreaChart data={cashFlowData}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--emerald-500)"
-                    stopOpacity={0.1}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--emerald-500)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--rose-500)"
-                    stopOpacity={0.1}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--rose-500)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="var(--border)"
-                opacity={0.5}
+                stroke="border"
+                opacity={0.2}
               />
               <XAxis
                 dataKey="name"
@@ -143,7 +134,7 @@ export default function DashboardInsights({
                   fontSize: 10,
                   fontWeight: 600,
                   fill: "currentColor",
-                  opacity: 0.5,
+                  opacity: 0.8,
                 }}
                 dy={10}
               />
@@ -162,8 +153,9 @@ export default function DashboardInsights({
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
+                  backgroundColor: "card",
+                  border: `1px solid border`,
+                  color: "white",
                   borderRadius: "16px",
                   fontSize: "12px",
                   fontWeight: "bold",
@@ -173,16 +165,19 @@ export default function DashboardInsights({
               <Area
                 type="monotone"
                 dataKey="income"
-                stroke="var(--emerald-500)"
-                strokeWidth={3}
-                fillOpacity={1}
+                stroke={emerald}
+                strokeWidth={3.5}
+                strokeOpacity={1}
                 fill="url(#colorIncome)"
+                style={{
+                  filter: "drop-shadow(0 0 6px rgba(16,185,129,0.25))",
+                }}
               />
               <Area
                 type="monotone"
                 dataKey="expense"
-                stroke="var(--rose-500)"
-                strokeWidth={3}
+                stroke="rose"
+                strokeWidth={3.5}
                 fillOpacity={1}
                 fill="url(#colorExpense)"
               />

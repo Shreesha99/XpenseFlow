@@ -9,8 +9,8 @@ import {
   LogOut,
 } from "lucide-react";
 
-import ExcelImport from "./ExcelImport";
-import BankLogo from "./BankLogo";
+import ExcelImport from "../ExcelImport";
+import BankLogo from "../BankLogo";
 
 type Props = {
   user: any;
