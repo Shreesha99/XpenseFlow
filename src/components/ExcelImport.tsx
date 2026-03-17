@@ -250,7 +250,14 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
           await Promise.all(
             newTransactions.map((item) =>
               addDoc(collection(db, "transactions"), {
-                ...item,
+                title: item.title,
+                amount: item.amount,
+                type: item.type,
+                mode: item.mode,
+                category: item.category,
+                date: item.date,
+                description: item.description,
+                hash: item.hash,
                 account_id: selectedAccountId,
                 created_at: serverTimestamp(),
                 uid: uid,
