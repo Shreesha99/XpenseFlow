@@ -19,7 +19,7 @@ import {
   subYears,
 } from "date-fns";
 import ThemeToggle from "../ThemeToggle";
-import SearchResults from "../SearchResults";
+import SearchResults from "../shared/SearchResults";
 import ReportExport from "../ReportExport";
 import { parseISO } from "date-fns";
 import { Account, Transaction } from "../../types";

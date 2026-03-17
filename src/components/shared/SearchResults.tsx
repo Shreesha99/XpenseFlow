@@ -1,4 +1,4 @@
-import { Transaction, Account } from "../types";
+import { Transaction, Account } from "../../types";
 import { format, parseISO } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, X, Tag, CreditCard, Calendar, ArrowRight } from "lucide-react";
