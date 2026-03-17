@@ -111,7 +111,9 @@ export default function CustomSelect({
                     }`}
                   >
                     <div className="flex items-center gap-3 truncate">
-                      {option.icon}
+                      <div className="w-8 h-8 flex items-center justify-center rounded-lg border border-border/40">
+                        {option.icon}
+                      </div>
                       <span className="truncate font-medium">
                         {option.name}
                       </span>

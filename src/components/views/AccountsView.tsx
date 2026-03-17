@@ -183,7 +183,7 @@ export default function AccountsView({
               options={INDIAN_BANKS.map((b) => ({
                 id: b.name,
                 name: b.name,
-                icon: <BankLogo name={b.name} className="w-4 h-4" />,
+                icon: <BankLogo name={b.name} className="w-10 h-10" />,
               }))}
               value={addAccountData.bankName}
               onChange={(val) =>
@@ -390,11 +390,11 @@ export default function AccountsView({
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
 
                 <div className="flex justify-between items-start mb-8 relative">
-                  <div className="w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+                  <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
                     <BankLogo
                       url={acc.logo_url}
                       name={acc.name}
-                      className="w-14 h-14"
+                      className="w-full h-full"
                     />
                   </div>
                   <div className="flex flex-col items-end gap-2">
