@@ -21,6 +21,7 @@ export default function TransactionsView({
   onDelete,
   actualBalances,
   totalNetWorth,
+  accounts,
 }: Props) {
   const filtered = transactions.filter((t) => {
     if (ledgerFilter === "all") return true;
@@ -73,6 +74,7 @@ export default function TransactionsView({
         onDelete={onDelete}
         actualBalances={actualBalances}
         totalNetWorth={totalNetWorth}
+        accounts={accounts}
       />
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Search,
   X,
@@ -7,6 +7,7 @@ import {
   Plus,
   HelpCircle,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import {
   format,
@@ -22,6 +23,7 @@ import SearchResults from "../SearchResults";
 import ReportExport from "../ReportExport";
 import { parseISO } from "date-fns";
 import { Account, Transaction } from "../../types";
+import { useState } from "react";
 
 type Props = {
   user: any;
@@ -71,6 +73,7 @@ export default function TopBar({
   filteredTransactions,
   showForm,
 }: Props) {
+  const [showFilters, setShowFilters] = useState(false);
   return (
     <header className="min-h-0 lg:min-h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40 py-1.5 lg:py-3 px-4 md:px-8">
       <div className="max-w-400 mx-auto flex flex-col lg:flex-row items-center gap-1.5 lg:gap-4">
@@ -202,122 +205,141 @@ export default function TopBar({
           </div>
         </div>
 
-        {/* Mobile Header Elements */}
-        <div className="flex lg:hidden flex-col items-center gap-1.5 w-full">
-          <div className="w-full overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setSelectedAccountId("all")}
-                className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                  selectedAccountId === "all"
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
-                    : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
-                }`}
-              >
-                All Accounts
-              </button>
-
-              {accounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  onClick={() => setSelectedAccountId(acc.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-                    selectedAccountId === acc.id
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20"
-                      : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
-                  }`}
-                >
-                  {acc.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 w-full">
-            <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 overflow-x-auto no-scrollbar flex-1">
-              {(["day", "month", "year", "custom"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setFilterMode(mode)}
-                  className={`px-2 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                    filterMode === mode
-                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-0.5 bg-muted/50 border border-border rounded-lg p-0.5 flex-1 justify-between">
-              {filterMode !== "custom" ? (
-                <>
-                  <button
-                    onClick={() => {
-                      if (filterMode === "day")
-                        setFilterDate(subDays(filterDate, 1));
-                      if (filterMode === "month")
-                        setFilterDate(subMonths(filterDate, 1));
-                      if (filterMode === "year")
-                        setFilterDate(subYears(filterDate, 1));
-                    }}
-                    className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronLeft className="w-3 h-3" />
-                  </button>
-
-                  <span className="text-[9px] font-bold text-foreground min-w-15 text-center tracking-tight truncate">
-                    {filterMode === "day" && format(filterDate, "dd MMM yy")}
-                    {filterMode === "month" && format(filterDate, "MMM yyyy")}
-                    {filterMode === "year" && format(filterDate, "yyyy")}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      if (filterMode === "day")
-                        setFilterDate(addDays(filterDate, 1));
-                      if (filterMode === "month")
-                        setFilterDate(addMonths(filterDate, 1));
-                      if (filterMode === "year")
-                        setFilterDate(addYears(filterDate, 1));
-                    }}
-                    className="p-0.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </>
-              ) : (
-                <div className="flex items-center gap-1 px-1.5 py-0.5">
-                  <input
-                    type="date"
-                    value={format(customRange.start, "yyyy-MM-dd")}
-                    onChange={(e) =>
-                      setCustomRange({
-                        ...customRange,
-                        start: new Date(e.target.value),
-                      })
-                    }
-                    className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
-                  />
-                  <span className="text-muted-foreground text-[8px]">→</span>
-                  <input
-                    type="date"
-                    value={format(customRange.end, "yyyy-MM-dd")}
-                    onChange={(e) =>
-                      setCustomRange({
-                        ...customRange,
-                        end: new Date(e.target.value),
-                      })
-                    }
-                    className="bg-transparent border-none text-[8px] font-bold text-foreground focus:outline-none w-16"
-                  />
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden w-full overflow-hidden"
+            >
+              <div className="mt-2 p-3 rounded-xl border border-border bg-muted/40 flex flex-col gap-3">
+                {/* Filter Mode */}
+                <div className="flex gap-2">
+                  {(["day", "month", "year", "custom"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setFilterMode(mode)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide ${
+                        filterMode === mode
+                          ? "bg-emerald-600 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
 
+                {/* Date Navigation */}
+                {filterMode !== "custom" ? (
+                  <div className="flex items-center justify-between px-2">
+                    <button
+                      onClick={() => {
+                        if (filterMode === "day")
+                          setFilterDate(subDays(filterDate, 1));
+                        if (filterMode === "month")
+                          setFilterDate(subMonths(filterDate, 1));
+                        if (filterMode === "year")
+                          setFilterDate(subYears(filterDate, 1));
+                      }}
+                      className="p-2 rounded-lg hover:bg-accent"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <span className="text-sm font-bold">
+                      {filterMode === "day" &&
+                        format(filterDate, "dd MMM yyyy")}
+                      {filterMode === "month" && format(filterDate, "MMM yyyy")}
+                      {filterMode === "year" && format(filterDate, "yyyy")}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        if (filterMode === "day")
+                          setFilterDate(addDays(filterDate, 1));
+                        if (filterMode === "month")
+                          setFilterDate(addMonths(filterDate, 1));
+                        if (filterMode === "year")
+                          setFilterDate(addYears(filterDate, 1));
+                      }}
+                      className="p-2 rounded-lg hover:bg-accent"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={format(customRange.start, "yyyy-MM-dd")}
+                      onChange={(e) =>
+                        setCustomRange({
+                          ...customRange,
+                          start: new Date(e.target.value),
+                        })
+                      }
+                      className="flex-1 p-2 rounded-lg bg-background border border-border text-sm"
+                    />
+                    <input
+                      type="date"
+                      value={format(customRange.end, "yyyy-MM-dd")}
+                      onChange={(e) =>
+                        setCustomRange({
+                          ...customRange,
+                          end: new Date(e.target.value),
+                        })
+                      }
+                      className="flex-1 p-2 rounded-lg bg-background border border-border text-sm"
+                    />
+                  </div>
+                )}
+
+                {/* Accounts */}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                  <button
+                    onClick={() => setSelectedAccountId("all")}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                      selectedAccountId === "all"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    All
+                  </button>
+
+                  {accounts.map((acc) => (
+                    <button
+                      key={acc.id}
+                      onClick={() => setSelectedAccountId(acc.id)}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                        selectedAccountId === acc.id
+                          ? "bg-emerald-600 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {acc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="lg:hidden w-full">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2 rounded-xl bg-muted/50 border border-border text-sm font-semibold"
+          >
+            Filters
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${
+                showFilters ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        </div>
         {/* Search + Actions */}
         <div className="flex items-center gap-3 w-full lg:flex-1">
           <div className="relative flex-1" id="tour-search">

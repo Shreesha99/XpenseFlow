@@ -19,13 +19,16 @@ interface Subscription {
   amount: number;
   cycle: "monthly";
   dueDay: number;
-  settled?: boolean;
+  settledMonths?: string[];
 }
 
 interface CalculatorProps {
   stats: Stats | null;
   compact?: boolean;
   currentBalance?: number;
+  filterMode: "day" | "month" | "year" | "custom";
+  filterDate: Date;
+  customRange: { start: Date; end: Date };
 }
 
 const billingDayOptions = Array.from({ length: 31 }, (_, i) => {
@@ -50,8 +53,26 @@ export default function Calculator({
   stats,
   compact,
   currentBalance,
+  filterMode = "month",
+  filterDate = new Date(),
+  customRange = { start: new Date(), end: new Date() },
 }: CalculatorProps) {
   const [items, setItems] = useState<Subscription[]>([]);
+
+  const actualBalance = currentBalance || 0;
+  const selectedDate = filterDate || new Date();
+  const selectedDay = selectedDate.getDate();
+  const selectedMonth = selectedDate.getMonth();
+  const selectedYear = selectedDate.getFullYear();
+
+  const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(
+    2,
+    "0"
+  )}`;
+
+  const isSettled = (item: Subscription) => {
+    return item.settledMonths?.includes(monthKey);
+  };
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "subscriptions"), (snap) => {
@@ -65,14 +86,73 @@ export default function Calculator({
     return () => unsub();
   }, []);
 
-  const actualBalance = currentBalance || 0;
-  const today = new Date().getDate();
+  const now = new Date();
+  const isCurrentMonth =
+    selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
+
+  const activeSubscriptions = useMemo(() => {
+    if (filterMode === "month") {
+      const daysInMonth = new Date(
+        selectedYear,
+        selectedMonth + 1,
+        0
+      ).getDate();
+
+      return items.filter((i) => i.dueDay <= daysInMonth);
+    }
+
+    if (filterMode === "day") {
+      return items.filter((i) => i.dueDay === selectedDay);
+    }
+
+    if (filterMode === "year") {
+      return items;
+    }
+
+    if (filterMode === "custom") {
+      const safeCustomRange = customRange || {
+        start: new Date(),
+        end: new Date(),
+      };
+      const start = safeCustomRange.start;
+      const end = safeCustomRange.end;
+
+      return items.filter((i) => {
+        const dueDate = new Date(selectedYear, selectedMonth, i.dueDay);
+        return dueDate >= start && dueDate <= end;
+      });
+    }
+
+    return items;
+  }, [
+    items,
+    filterMode,
+    selectedDay,
+    selectedMonth,
+    selectedYear,
+    customRange,
+  ]);
 
   const yetToDeduct = useMemo(() => {
-    return items
-      .filter((i) => !i.settled)
+    return activeSubscriptions
+      .filter((i) => {
+        if (isSettled(i)) return false;
+
+        if (
+          selectedYear < now.getFullYear() ||
+          (selectedYear === now.getFullYear() && selectedMonth < now.getMonth())
+        ) {
+          return false;
+        }
+
+        if (isCurrentMonth) {
+          return i.dueDay >= now.getDate();
+        }
+
+        return true;
+      })
       .reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  }, [items]);
+  }, [activeSubscriptions, selectedMonth, selectedYear, isCurrentMonth]);
 
   const projectedBalance = actualBalance - yetToDeduct;
 
@@ -90,9 +170,19 @@ export default function Calculator({
     await updateDoc(doc(db, "subscriptions", id), { dueDay: day });
   };
 
-  const toggleSettled = async (id: string, current?: boolean) => {
-    await updateDoc(doc(db, "subscriptions", id), {
-      settled: !current,
+  const toggleSettled = async (item: Subscription) => {
+    const ref = doc(db, "subscriptions", item.id);
+
+    const currentMonths = item.settledMonths || [];
+
+    const exists = currentMonths.includes(monthKey);
+
+    const updatedMonths = exists
+      ? currentMonths.filter((m) => m !== monthKey)
+      : [...currentMonths, monthKey];
+
+    await updateDoc(ref, {
+      settledMonths: updatedMonths,
     });
   };
 
@@ -104,7 +194,7 @@ export default function Calculator({
       amount: 0,
       cycle: "monthly",
       dueDay: 1,
-      settled: false,
+      settledMonths: [],
       uid: auth.currentUser?.uid,
     });
   };
@@ -193,19 +283,16 @@ export default function Calculator({
               {items.map((item) => {
                 const now = new Date();
 
-                const currentMonthDue = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  item.dueDay
-                );
-
-                const overdue = !item.settled && now.getDate() > item.dueDay;
+                const overdue =
+                  !isSettled(item) &&
+                  isCurrentMonth &&
+                  now.getDate() > item.dueDay;
 
                 return (
                   <div
                     key={item.id}
                     className={`p-6 rounded-3xl border shadow-sm ${
-                      item.settled
+                      isSettled(item)
                         ? "bg-muted/30 border-border opacity-60"
                         : overdue
                         ? "bg-red-500/5 border-red-500/30"
@@ -225,16 +312,16 @@ export default function Calculator({
 
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toggleSettled(item.id, item.settled)}
+                          onClick={() => toggleSettled(item)}
                           className={`text-[10px] font-bold px-2 py-1 rounded-lg ${
-                            item.settled
+                            isSettled(item)
                               ? "bg-emerald-500/10 text-emerald-500"
                               : overdue
                               ? "bg-red-500/10 text-red-500"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {item.settled
+                          {isSettled(item)
                             ? "Settled"
                             : overdue
                             ? "Mark Settled"

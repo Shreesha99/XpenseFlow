@@ -760,6 +760,9 @@ function AppContent() {
                 <SubscriptionsView
                   stats={stats}
                   currentBalance={actualCurrentBalance}
+                  filterMode={filterMode}
+                  filterDate={filterDate}
+                  customRange={customRange}
                 />
               </motion.div>
             )}
