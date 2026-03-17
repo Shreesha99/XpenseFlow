@@ -1,9 +1,4 @@
 import { motion } from "motion/react";
-import {
-  LayoutDashboard,
-  PieChart,
-  Calculator as CalcIcon,
-} from "lucide-react";
 import BankLogo from "../ui/BankLogo";
 import DashboardInsights from "../ui/DashboardInsights";
 import RecentActivity from "../RecentActivity";
@@ -23,6 +18,10 @@ interface DashboardViewProps {
   stats: Stats | null;
   handleDelete: (id: string) => void;
   setActiveView: (view: any) => void;
+  currentBalance: number;
+  filterMode: "day" | "month" | "year" | "custom";
+  filterDate: Date;
+  customRange: { start: Date; end: Date };
 }
 
 export default function DashboardView({
@@ -194,7 +193,11 @@ export default function DashboardView({
           <CategorySummary stats={stats} />
 
           <div className="bg-card border border-border rounded-3xl p-6">
-            <Calculator stats={stats} compact />
+            <Calculator
+              stats={stats}
+              currentBalance={actualCurrentBalance}
+              compact
+            />
           </div>
         </div>
       </div>

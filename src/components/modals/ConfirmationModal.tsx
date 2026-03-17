@@ -8,28 +8,28 @@ interface ConfirmationModalProps {
   title: string;
   message: string;
   confirmText?: string;
-  variant?: 'danger' | 'warning' | 'info';
+  variant?: "danger" | "warning" | "info";
 }
 
-export default function ConfirmationModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
-  message, 
+export default function ConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
   confirmText = "Confirm",
-  variant = 'danger'
+  variant = "danger",
 }: ConfirmationModalProps) {
   const variantStyles = {
-    danger: 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/20',
-    warning: 'bg-amber-600 hover:bg-amber-500 shadow-amber-500/20',
-    info: 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'
+    danger: "bg-rose-600 hover:bg-rose-500 shadow-rose-500/20",
+    warning: "bg-amber-600 hover:bg-amber-500 shadow-amber-500/20",
+    info: "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20",
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -45,12 +45,23 @@ export default function ConfirmationModal({
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${variant === 'danger' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                <div
+                  className={`p-2 rounded-xl ${
+                    variant === "danger"
+                      ? "bg-rose-500/10 text-rose-500"
+                      : "bg-amber-500/10 text-amber-500"
+                  }`}
+                >
                   <AlertTriangle className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-foreground">{title}</h3>
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                  {title}
+                </h3>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>

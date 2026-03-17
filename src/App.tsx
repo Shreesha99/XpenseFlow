@@ -710,6 +710,10 @@ function AppContent() {
                 stats={stats}
                 handleDelete={handleDelete}
                 setActiveView={setActiveView}
+                filterMode={filterMode}
+                filterDate={filterDate}
+                customRange={customRange}
+                currentBalance={0}
               />
             )}
 

@@ -105,7 +105,14 @@ export default function RecentActivity({
                   e.stopPropagation();
                   onDelete(t.id);
                 }}
-                className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                className="
+    p-2.5 md:p-2
+    text-muted-foreground 
+    hover:text-rose-500 hover:bg-rose-500/10 
+    rounded-lg transition-all
+
+    opacity-100 md:opacity-0 md:group-hover:opacity-100
+  "
               >
                 <Trash2 className="w-4 h-4" />
               </button>

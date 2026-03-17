@@ -12,14 +12,14 @@ interface PromptModalProps {
   placeholder?: string;
 }
 
-export default function PromptModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
-  message, 
-  defaultValue = "", 
-  placeholder = "Enter value..." 
+export default function PromptModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  defaultValue = "",
+  placeholder = "Enter value...",
 }: PromptModalProps) {
   const [value, setValue] = useState(defaultValue);
 
@@ -38,7 +38,7 @@ export default function PromptModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -53,15 +53,22 @@ export default function PromptModal({
             className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold tracking-tight text-foreground">{title}</h3>
-              <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
+              <h3 className="text-xl font-bold tracking-tight text-foreground">
+                {title}
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{message}</label>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  {message}
+                </label>
                 <input
                   autoFocus
                   type="text"

@@ -26,9 +26,9 @@ interface CalculatorProps {
   stats: Stats | null;
   compact?: boolean;
   currentBalance?: number;
-  filterMode: "day" | "month" | "year" | "custom";
-  filterDate: Date;
-  customRange: { start: Date; end: Date };
+  filterMode?: "day" | "month" | "year" | "custom";
+  filterDate?: Date;
+  customRange?: { start: Date; end: Date };
 }
 
 const billingDayOptions = Array.from({ length: 31 }, (_, i) => {

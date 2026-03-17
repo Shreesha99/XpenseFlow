@@ -91,9 +91,9 @@ export default function SettingsView({
                         </div>
                         <div>
                           <p className="text-sm font-bold">{acc.name}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          {/* <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             {acc.id === "1" ? "Primary" : "Secondary"}
-                          </p>
+                          </p> */}
                         </div>
                       </div>
                       <button

@@ -50,7 +50,7 @@ export default function TransactionsView({
         </div>
 
         {/* Filters */}
-        <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
+        {/* <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
           {(["all", "income", "expense"] as const).map((type) => (
             <button
               key={type}
@@ -64,7 +64,7 @@ export default function TransactionsView({
               {type}
             </button>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* Table */}
