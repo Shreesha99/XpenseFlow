@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Stats } from "../types";
-import { CreditCard, AlertCircle, Plus, Trash2, Repeat } from "lucide-react";
+import { CreditCard, AlertCircle, Trash2, Repeat } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -74,6 +74,12 @@ export default function Calculator({
   const isSettled = (item: Subscription) => {
     return item.settledMonths?.includes(monthKey);
   };
+
+  useEffect(() => {
+    const handler = () => addSubscription();
+    window.addEventListener("add-subscription", handler);
+    return () => window.removeEventListener("add-subscription", handler);
+  }, []);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -245,36 +251,8 @@ export default function Calculator({
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-4xl font-bold tracking-tighter">Subscriptions</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track and project your upcoming recurring expenses.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={addSubscription}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold"
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
-
-          <div className="bg-emerald-500/5 border border-emerald-500/10 px-8 py-4 rounded-3xl text-right">
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">
-              Projected Net
-            </p>
-            <p className="text-3xl font-bold tracking-tighter">
-              ₹{projectedBalance.toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <div className="space-y-8 md:space-y-12 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 w-full">
         <div className="lg:col-span-8 space-y-6">
           {items.length === 0 ? (
             <div className="relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-border bg-linear-to-b from-card to-muted/20 text-center">

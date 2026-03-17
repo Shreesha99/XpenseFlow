@@ -242,6 +242,7 @@ function AppContent() {
       return { ...acc, balance };
     });
   }, [accounts, transactions, endOfPeriod]);
+  console.log("USER UID:", user?.uid);
 
   // Actual Current Balances (Reflects everything in DB)
   const actualAccountBalances = useMemo(() => {
@@ -365,10 +366,7 @@ function AppContent() {
       orderBy("date", "desc")
     );
 
-    const qAccounts = query(
-      collection(db, "accounts"),
-      where("uid", "==", user.uid)
-    );
+    const qAccounts = collection(db, "accounts");
 
     const qCategories = query(
       collection(db, "categories"),
@@ -384,9 +382,10 @@ function AppContent() {
     });
 
     const unsubAcc = onSnapshot(qAccounts, (snapshot) => {
-      const accs = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Account)
-      );
+      const accs = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() } as Account))
+        .filter((acc) => acc.uid === user.uid);
+
       setAccounts(accs);
     });
 

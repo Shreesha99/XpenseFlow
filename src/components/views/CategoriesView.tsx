@@ -30,7 +30,7 @@ export default function CategoriesView({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="max-w-6xl mx-auto"
+      className="space-y-8 md:space-y-12"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-12">

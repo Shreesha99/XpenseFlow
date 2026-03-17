@@ -233,12 +233,12 @@ function NavItem({
     >
       {icon}
       <span className="hidden lg:block">{label}</span>
-      {active && (
+      {/* {active && (
         <motion.div
           layoutId="nav-active"
           className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-r-full"
         />
-      )}
+      )} */}
     </button>
   );
 }

@@ -136,6 +136,8 @@ export default function TransactionForm({
     icon: <BankLogo name={acc.name} url={acc.logo_url} className="w-4 h-4" />,
   }));
 
+  console.log("Accounts in form:", accounts);
+
   return (
     <form
       onSubmit={handleSubmit}
