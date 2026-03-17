@@ -37,8 +37,6 @@ const cleanNarration = (narration: string) => {
   if (!narration) return "Transaction";
 
   let text = narration.trim();
-
-  // split by hyphen
   const parts = text.split("-").map((p) => p.trim());
 
   let merchant = "";
@@ -55,18 +53,11 @@ const cleanNarration = (narration: string) => {
     merchant = parts[0];
   }
 
-  // remove handles like @ybl
   merchant = merchant.split("@")[0];
-
-  // remove numbers
   merchant = merchant.replace(/[0-9]/g, "");
-
-  // remove extra words
   merchant = merchant.replace(/limited|pvt ltd|private|ltd/gi, "");
-
   merchant = merchant.trim();
 
-  // title case
   merchant = merchant
     .toLowerCase()
     .split(" ")
@@ -82,9 +73,10 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
     message?: string;
   }>({ type: "idle" });
 
-  const createHash = (title: string, amount: number, date: string) => {
-    return `${title}-${amount}-${date}`.toLowerCase();
+  const createHash = (normalizedRow: any, date: string) => {
+    return `${normalizedRow["narration"]}-${normalizedRow["chq./ref.no."]}-${date}`.toLowerCase();
   };
+
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
 
   const onDrop = useCallback(
@@ -121,16 +113,13 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
           const workbook = XLSX.read(data, { type: "binary" });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-          // read raw rows
           const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-          // Detect bank from uploaded statement
-          const detectedBank = detectBankFromSheet(rows);
+          detectBankFromSheet(rows);
 
           let headerRowIndex = rows.findIndex((row) =>
             row.some((cell: any) => {
               const c = String(cell).toLowerCase();
-
               return (
                 c.includes("narration") ||
                 c.includes("description") ||
@@ -143,26 +132,27 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
 
           if (headerRowIndex === -1) headerRowIndex = 0;
 
-          if (headerRowIndex === -1) headerRowIndex = 0;
-
-          // convert to json
           const jsonData = XLSX.utils.sheet_to_json(sheet, {
             range: headerRowIndex,
             defval: "",
           });
-          console.log("HEADER ROW INDEX:", headerRowIndex);
-          console.log("FIRST ROW:", jsonData[0]);
-          console.log("TOTAL ROWS:", jsonData.length);
 
           const uid = auth.currentUser?.uid;
           if (!uid) throw new Error("User not authenticated");
 
           const formattedData = jsonData
             .map((row: any) => {
-              const dateRaw = row["Date"];
-              const narration = row["Narration"];
+              const normalizeKey = (key: string) => key.trim().toLowerCase();
 
-              // skip masked or summary rows
+              const normalizedRow = Object.fromEntries(
+                Object.entries(row).map(([k, v]) => [normalizeKey(k), v])
+              ) as Record<string, any>;
+
+              const dateRaw = normalizedRow["date"];
+              const narration = normalizedRow["narration"];
+              const debit = normalizedRow["withdrawal amt."] || "";
+              const credit = normalizedRow["deposit amt."] || "";
+
               if (
                 !dateRaw ||
                 String(dateRaw).includes("*") ||
@@ -173,51 +163,73 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
                 return null;
               }
 
-              const debit = row["Withdrawal Amt."] || "";
-              const credit = row["Deposit Amt."] || "";
+              const parseAmount = (val: any) =>
+                parseFloat(String(val || "0").replace(/,/g, "")) || 0;
+
+              const creditAmt = parseAmount(credit);
+              const debitAmt = parseAmount(debit);
 
               let amount = 0;
               let type: "expense" | "credit" = "expense";
 
-              if (credit) {
-                amount = parseFloat(String(credit).replace(/,/g, ""));
+              if (creditAmt > 0) {
+                amount = creditAmt;
                 type = "credit";
-              } else if (debit) {
-                amount = parseFloat(String(debit).replace(/,/g, ""));
+              } else if (debitAmt > 0) {
+                amount = debitAmt;
                 type = "expense";
               }
 
               if (!amount || isNaN(amount)) return null;
 
-              // parse dd/mm/yy
-              const parts = String(dateRaw).split("/");
-              if (parts.length !== 3) return null;
+              let parsedDate = "";
 
-              const parsedDate = new Date(
-                2000 + Number(parts[2]),
-                Number(parts[1]) - 1,
-                Number(parts[0])
-              )
-                .toISOString()
-                .slice(0, 10);
+              if (typeof dateRaw === "number") {
+                const excelDate = XLSX.SSF.parse_date_code(dateRaw);
+                parsedDate = new Date(excelDate.y, excelDate.m - 1, excelDate.d)
+                  .toISOString()
+                  .slice(0, 10);
+              } else if (typeof dateRaw === "string") {
+                const parts = dateRaw.split("/");
+                if (parts.length !== 3) return null;
 
+                parsedDate = new Date(
+                  2000 + Number(parts[2]),
+                  Number(parts[1]) - 1,
+                  Number(parts[0])
+                )
+                  .toISOString()
+                  .slice(0, 10);
+              } else {
+                return null;
+              }
               const title = cleanNarration(narration);
 
               return {
                 title,
+                rawNarration: narration,
                 amount,
                 type,
                 mode: "digital",
                 category: "Imported",
                 date: parsedDate,
                 description: "",
-                hash: createHash(title, amount, parsedDate),
+                hash: createHash(normalizedRow, parsedDate),
               };
             })
             .filter(Boolean);
 
-          console.log("FORMATTED DATA SAMPLE:", formattedData.slice(0, 5));
-          console.log("FORMATTED LENGTH:", formattedData.length);
+          const totalCredits = formattedData
+            .filter((t) => t.type === "credit")
+            .reduce((sum, t) => sum + t.amount, 0);
+
+          const totalDebits = formattedData
+            .filter((t) => t.type === "expense")
+            .reduce((sum, t) => sum + t.amount, 0);
+
+          console.log("TOTAL CREDITS:", totalCredits);
+          console.log("TOTAL DEBITS:", totalDebits);
+          console.log("NET:", totalCredits - totalDebits);
 
           const newTransactions: any[] = [];
 
