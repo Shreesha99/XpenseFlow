@@ -242,7 +242,6 @@ function AppContent() {
       return { ...acc, balance };
     });
   }, [accounts, transactions, endOfPeriod]);
-  console.log("USER UID:", user?.uid);
 
   // Actual Current Balances (Reflects everything in DB)
   const actualAccountBalances = useMemo(() => {

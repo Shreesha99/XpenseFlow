@@ -99,11 +99,7 @@ export default function TransactionForm({
         uid: auth.currentUser.uid,
       };
 
-      console.log("Submitting transaction to Firestore:", payload);
-
       await addDoc(collection(db, "transactions"), payload);
-
-      console.log("Transaction saved successfully to Firestore");
       setFormData({
         title: "",
         amount: "",
@@ -135,8 +131,6 @@ export default function TransactionForm({
     name: acc.name,
     icon: <BankLogo name={acc.name} url={acc.logo_url} className="w-4 h-4" />,
   }));
-
-  console.log("Accounts in form:", accounts);
 
   return (
     <form

@@ -11,7 +11,7 @@ import {
   where,
   getDocs,
 } from "../firebase";
-import { doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Account } from "../types";
 import CustomSelect from "./shared/CustomSelect";
 import BankLogo from "./ui/BankLogo";
@@ -73,8 +73,10 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
     message?: string;
   }>({ type: "idle" });
 
-  const createHash = (normalizedRow: any, date: string) => {
-    return `${normalizedRow["narration"]}-${normalizedRow["chq./ref.no."]}-${date}`.toLowerCase();
+  const createHash = (tx: any) => {
+    return `${tx.rawNarration}-${tx.amount}-${tx.date}-${tx.type}`
+      .toLowerCase()
+      .replace(/\s+/g, "");
   };
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
@@ -114,6 +116,33 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
           const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          // 🔥 STEP 0: Extract opening balance from SUMMARY section
+          // 🔥 STEP 0: Extract opening balance from SUMMARY section
+          let detectedOpeningBalance = 0;
+
+          for (let i = rows.length - 1; i >= 0; i--) {
+            const row = rows[i];
+            const rowText = row.join(" ").toLowerCase();
+
+            if (rowText.includes("opening balance")) {
+              // ✅ Try same row first
+              let value =
+                row.find((cell: any) => String(cell).match(/^\d+(\.\d+)?$/)) ||
+                null;
+
+              // ✅ If not found, check NEXT ROW (this is your case)
+              if (!value && rows[i + 1]) {
+                value = rows[i + 1].find((cell: any) =>
+                  String(cell).match(/^\d+(\.\d+)?$/)
+                );
+              }
+
+              detectedOpeningBalance =
+                parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
+              break;
+            }
+          }
 
           detectBankFromSheet(rows);
 
@@ -132,10 +161,25 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
 
           if (headerRowIndex === -1) headerRowIndex = 0;
 
-          const jsonData = XLSX.utils.sheet_to_json(sheet, {
-            range: headerRowIndex,
-            defval: "",
+          const rawData = XLSX.utils.sheet_to_json<any[]>(sheet, {
+            header: 1,
           });
+
+          const headers = (rawData[headerRowIndex] as any[]).map((h: any) =>
+            String(h || "")
+              .toLowerCase()
+              .trim()
+          );
+
+          const jsonData = rawData
+            .slice(headerRowIndex + 1)
+            .map((row: any[]) => {
+              const obj: Record<string, any> = {};
+              headers.forEach((key: string, i: number) => {
+                obj[key] = row[i];
+              });
+              return obj;
+            });
 
           const uid = auth.currentUser?.uid;
           if (!uid) throw new Error("User not authenticated");
@@ -148,58 +192,102 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
                 Object.entries(row).map(([k, v]) => [normalizeKey(k), v])
               ) as Record<string, any>;
 
-              const dateRaw = normalizedRow["date"];
-              const narration = normalizedRow["narration"];
-              const debit = normalizedRow["withdrawal amt."] || "";
-              const credit = normalizedRow["deposit amt."] || "";
+              if (!normalizedRow["date"] && !normalizedRow["txn date"]) {
+                return null;
+              }
+
+              const dateRaw =
+                normalizedRow["date"] ||
+                normalizedRow["txn date"] ||
+                normalizedRow["transaction date"] ||
+                normalizedRow["tran date"];
+              const narration =
+                normalizedRow["narration"] ||
+                normalizedRow["description"] ||
+                normalizedRow["particulars"] ||
+                normalizedRow["remarks"] ||
+                "";
+              const debit =
+                normalizedRow["withdrawal amt."] ||
+                normalizedRow["withdrawal"] ||
+                normalizedRow["debit"] ||
+                normalizedRow["dr"] ||
+                normalizedRow["debit amount"] ||
+                "";
+
+              const credit =
+                normalizedRow["deposit amt."] ||
+                normalizedRow["deposit"] ||
+                normalizedRow["credit"] ||
+                normalizedRow["cr"] ||
+                normalizedRow["credit amount"] ||
+                "";
+              const narrationLower = narration.toLowerCase();
+              if (narrationLower.includes("opening")) {
+                return null;
+              }
 
               if (
                 !dateRaw ||
-                String(dateRaw).includes("*") ||
                 !narration ||
-                narration.includes("*") ||
-                narration.toLowerCase().includes("statement")
+                narrationLower.includes("balance") ||
+                narrationLower.includes("statement") ||
+                narrationLower.includes("generated") ||
+                narrationLower.includes("summary") ||
+                narrationLower.includes("gst") ||
+                narrationLower.includes("office") ||
+                narrationLower.includes("address") ||
+                narrationLower.includes("end of statement") ||
+                narrationLower.includes("opening") ||
+                narrationLower.includes("closing")
               ) {
                 return null;
               }
 
               const parseAmount = (val: any) =>
                 parseFloat(String(val || "0").replace(/,/g, "")) || 0;
-
               const creditAmt = parseAmount(credit);
               const debitAmt = parseAmount(debit);
 
+              if (creditAmt === 0 && debitAmt === 0) {
+                return null;
+              }
+
               let amount = 0;
-              let type: "expense" | "credit" = "expense";
+              let type: "expense" | "credit";
+
+              if (creditAmt > 0 && debitAmt > 0) {
+                return null;
+              }
 
               if (creditAmt > 0) {
                 amount = creditAmt;
                 type = "credit";
-              } else if (debitAmt > 0) {
+              } else {
                 amount = debitAmt;
                 type = "expense";
               }
-
-              if (!amount || isNaN(amount)) return null;
 
               let parsedDate = "";
 
               if (typeof dateRaw === "number") {
                 const excelDate = XLSX.SSF.parse_date_code(dateRaw);
-                parsedDate = new Date(excelDate.y, excelDate.m - 1, excelDate.d)
-                  .toISOString()
-                  .slice(0, 10);
+
+                parsedDate = `${excelDate.y}-${String(excelDate.m).padStart(
+                  2,
+                  "0"
+                )}-${String(excelDate.d).padStart(2, "0")}`;
               } else if (typeof dateRaw === "string") {
                 const parts = dateRaw.split("/");
                 if (parts.length !== 3) return null;
 
-                parsedDate = new Date(
-                  2000 + Number(parts[2]),
-                  Number(parts[1]) - 1,
-                  Number(parts[0])
-                )
-                  .toISOString()
-                  .slice(0, 10);
+                const day = Number(parts[0]);
+                const month = Number(parts[1]);
+                const year = Number(parts[2]);
+
+                parsedDate = `${year < 100 ? 2000 + year : year}-${String(
+                  month
+                ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               } else {
                 return null;
               }
@@ -214,38 +302,54 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
                 category: "Imported",
                 date: parsedDate,
                 description: "",
-                hash: createHash(normalizedRow, parsedDate),
+                hash: createHash({
+                  rawNarration: narration,
+                  amount,
+                  date: parsedDate,
+                  type,
+                }),
               };
             })
             .filter(Boolean);
 
-          const totalCredits = formattedData
-            .filter((t) => t.type === "credit")
-            .reduce((sum, t) => sum + t.amount, 0);
+          let adjustedOpeningBalance = detectedOpeningBalance;
 
-          const totalDebits = formattedData
-            .filter((t) => t.type === "expense")
-            .reduce((sum, t) => sum + t.amount, 0);
+          if (formattedData.length > 0 && detectedOpeningBalance) {
+            const firstTx = formattedData[0];
 
-          console.log("TOTAL CREDITS:", totalCredits);
-          console.log("TOTAL DEBITS:", totalDebits);
-          console.log("NET:", totalCredits - totalDebits);
-
-          const newTransactions: any[] = [];
-
-          for (const tx of formattedData) {
-            const q = query(
-              collection(db, "transactions"),
-              where("uid", "==", uid),
-              where("hash", "==", tx.hash)
-            );
-
-            const existing = await getDocs(q);
-
-            if (existing.empty) {
-              newTransactions.push(tx);
+            if (firstTx.type === "credit") {
+              adjustedOpeningBalance -= firstTx.amount;
+            } else {
+              adjustedOpeningBalance += firstTx.amount;
             }
           }
+          const accountRef = doc(db, "accounts", selectedAccountId);
+          const accountSnap = await getDoc(accountRef);
+
+          if (accountSnap.exists()) {
+            const accData = accountSnap.data();
+
+            if (
+              (!accData.initial_balance || accData.initial_balance === 0) &&
+              adjustedOpeningBalance > 0
+            ) {
+              await updateDoc(accountRef, {
+                initial_balance: adjustedOpeningBalance,
+              });
+            }
+          }
+
+          const existingSnapshot = await getDocs(
+            query(collection(db, "transactions"), where("uid", "==", uid))
+          );
+
+          const existingHashes = new Set(
+            existingSnapshot.docs.map((doc) => doc.data().hash)
+          );
+
+          const newTransactions = formattedData.filter(
+            (tx) => !existingHashes.has(tx.hash)
+          );
 
           await Promise.all(
             newTransactions.map((item) =>

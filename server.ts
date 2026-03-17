@@ -23,26 +23,32 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath, {
-      setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        } else {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        }
-      }
-    }));
-    app.get('*', (req, res) => {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.sendFile(path.join(distPath, 'index.html'));
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, path) => {
+          if (path.endsWith(".html")) {
+            res.setHeader(
+              "Cache-Control",
+              "no-cache, no-store, must-revalidate"
+            );
+          } else {
+            res.setHeader(
+              "Cache-Control",
+              "public, max-age=31536000, immutable"
+            );
+          }
+        },
+      })
+    );
+    app.get("*", (req, res) => {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
   if (process.env.NODE_ENV !== "production") {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
+    app.listen(PORT, "0.0.0.0", () => {});
   }
 
   return app;
