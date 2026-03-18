@@ -107,7 +107,7 @@ export default function DashboardInsights({
           </div>
         </div>
 
-        <div className="h-60 w-full">
+        <div className="h-60 min-h-60 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={cashFlowData}>
               <defs>
@@ -196,7 +196,7 @@ export default function DashboardInsights({
         </div>
 
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
-          <div className="h-45 w-full relative">
+          <div className="h-45 min-h-45 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

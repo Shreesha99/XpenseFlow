@@ -567,15 +567,7 @@ export default function AccountGrid({
             )}
           </div>
         </div>
-      ) : (
-        <>
-          {/* Desktop Table */}
-          <div className="hidden md:block ...">...</div>
-
-          {/* Mobile Cards */}
-          <div className="md:hidden ...">...</div>
-        </>
-      )}
+      ) : null}
     </div>
   );
 }

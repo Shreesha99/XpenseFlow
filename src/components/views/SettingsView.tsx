@@ -138,7 +138,25 @@ export default function SettingsView({
                         key={acc.id}
                         className="flex items-center justify-between p-4 bg-background border border-border rounded-2xl hover:border-emerald-500/30 transition-all group"
                       >
-                        ...
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border">
+                            <Landmark className="w-4 h-4 text-muted-foreground" />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-bold">{acc.name}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                              {acc.type || "Account"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteAccount(acc.id)}
+                          className="p-2 rounded-xl text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))
                   )}
