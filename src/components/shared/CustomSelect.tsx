@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { ChevronDown, Check, Landmark } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { createPortal } from "react-dom";
 
 interface Option {
   id: string | number;
@@ -34,25 +35,61 @@ export default function CustomSelect({
     (opt) => String(opt.id) === String(value)
   );
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState({});
+  const [dropdownPos, setDropdownPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isOpen && buttonRef.current) {
+    setMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+
+    setDropdownPos({
+      top: rect.bottom + 6,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+
       const rect = buttonRef.current.getBoundingClientRect();
 
-      setDropdownStyle({
+      setDropdownPos({
         top: rect.bottom + 6,
         left: rect.left,
         width: rect.width,
       });
-    }
+    };
+
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
   }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(target) &&
+        !buttonRef.current?.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -99,47 +136,35 @@ export default function CustomSelect({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            style={dropdownStyle}
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 5, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="fixed z-9999 w-full bg-card border border-border rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto no-scrollbar"
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-full mt-2 w-full z-50 bg-card border border-border rounded-2xl shadow-xl max-h-60 overflow-y-auto"
           >
             <div className="p-1">
-              {options.length === 0 ? (
-                <div className="p-4 text-center text-xs text-muted-foreground italic">
-                  Nothing to show here yet
-                </div>
-              ) : (
-                options.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => {
-                      onChange(String(option.id));
-                      setIsOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-sm transition-all hover:bg-muted group ${
-                      String(option.id) === String(value)
-                        ? "bg-emerald-500/10 text-emerald-500"
-                        : "text-foreground"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 truncate">
-                      <div className="w-8 h-8 flex items-center justify-center rounded-lg border border-border/40">
-                        {option.icon}
-                      </div>
-                      <span className="truncate font-medium">
-                        {option.name}
-                      </span>
-                    </div>
-                    {String(option.id) === String(value) && (
-                      <Check className="w-4 h-4 shrink-0" />
-                    )}
-                  </button>
-                ))
-              )}
+              {options.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => {
+                    onChange(String(option.id));
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-sm hover:bg-muted ${
+                    String(option.id) === String(value)
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {option.icon}
+                    <span>{option.name}</span>
+                  </div>
+                  {String(option.id) === String(value) && (
+                    <Check className="w-4 h-4" />
+                  )}
+                </button>
+              ))}
             </div>
           </motion.div>
         )}

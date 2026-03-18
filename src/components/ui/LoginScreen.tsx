@@ -1,7 +1,25 @@
 import { motion } from "motion/react";
-import { LogIn } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
+import { useState } from "react";
 
-export default function LoginScreen({ signIn }: { signIn: () => void }) {
+export default function LoginScreen({
+  signIn,
+}: {
+  signIn: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      await signIn();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 font-sans selection:bg-emerald-500/30 overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.05),transparent_70%)] pointer-events-none" />
@@ -38,11 +56,26 @@ export default function LoginScreen({ signIn }: { signIn: () => void }) {
           </div>
 
           <button
-            onClick={signIn}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
+            onClick={handleSignIn}
+            disabled={loading}
+            className={`w-full px-8 py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-3
+              ${
+                loading
+                  ? "bg-emerald-500/70 cursor-not-allowed"
+                  : "bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] shadow-emerald-500/20 text-white"
+              }`}
           >
-            <LogIn className="w-5 h-5" />
-            Sign in with Google
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Signing you in...
+              </>
+            ) : (
+              <>
+                <LogIn className="w-5 h-5" />
+                Sign in with Google
+              </>
+            )}
           </button>
 
           <div className="pt-4 border-t border-border/50">

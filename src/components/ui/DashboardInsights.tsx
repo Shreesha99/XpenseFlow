@@ -8,8 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   Cell,
   PieChart,
   Pie,
@@ -17,13 +15,11 @@ import {
 import {
   format,
   parseISO,
-  startOfMonth,
-  endOfMonth,
   eachMonthOfInterval,
   subMonths,
   isSameMonth,
 } from "date-fns";
-import { TrendingUp, CreditCard, Smartphone, Banknote } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface DashboardInsightsProps {
   transactions: Transaction[];
@@ -221,17 +217,38 @@ export default function DashboardInsights({
                   data={modeData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={65}
+                  innerRadius={70}
                   outerRadius={90}
                   paddingAngle={4}
                   dataKey="value"
                   stroke="none"
                 >
                   {modeData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} stroke="none" />
+                    <Cell
+                      key={index}
+                      fill={entry.name === "Digital" ? "#10b981" : "#f59e0b"}
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  wrapperStyle={{ zIndex: 9999, pointerEvents: "none" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+
+                    const data = payload[0];
+
+                    return (
+                      <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-lg">
+                        <p className="text-xs text-muted-foreground">
+                          {data.name}
+                        </p>
+                        <p className="text-sm font-bold text-foreground">
+                          ₹{Number(data.value).toLocaleString()}
+                        </p>
+                      </div>
+                    );
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

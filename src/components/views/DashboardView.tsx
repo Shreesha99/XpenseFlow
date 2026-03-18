@@ -37,6 +37,7 @@ export default function DashboardView({
   handleDelete,
   setActiveView,
 }: DashboardViewProps) {
+  const net = totalCredits - totalExpenses;
   return (
     <motion.div
       key="dashboard"
@@ -162,7 +163,7 @@ export default function DashboardView({
         <DashboardInsights transactions={transactions} />
       </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
+      <div className="space-y-10">
         <div className="xl:col-span-8 space-y-8">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -181,17 +182,16 @@ export default function DashboardView({
               View Full Ledger
             </button>
           </div>
-
-          <RecentActivity
-            transactions={filteredTransactions.slice(0, 6)}
-            accounts={accounts}
-            onDelete={handleDelete}
-          />
+          <div className="col-span-2">
+            <RecentActivity
+              transactions={filteredTransactions.slice(0, 6)}
+              accounts={accounts}
+              onDelete={handleDelete}
+            />
+          </div>
         </div>
 
         <div className="xl:col-span-4 space-y-12">
-          <CategorySummary stats={stats} />
-
           <div className="bg-card border border-border rounded-3xl p-6">
             <Calculator
               stats={stats}
@@ -199,6 +199,26 @@ export default function DashboardView({
               compact
             />
           </div>
+          <CategorySummary stats={stats} />
+        </div>
+        <div className="bg-card border border-border rounded-3xl p-6 space-y-4">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            Smart Insight
+          </p>
+
+          <p className="text-lg font-semibold text-foreground">
+            {net >= 0
+              ? `You saved ₹${net.toLocaleString()} this period`
+              : `You spent ₹${Math.abs(
+                  net
+                ).toLocaleString()} more than you earned`}
+          </p>
+
+          <p className="text-xs text-muted-foreground">
+            {net >= 0
+              ? "Great job. You're maintaining a positive cash flow."
+              : "Consider reducing discretionary expenses to improve savings."}
+          </p>
         </div>
       </div>
     </motion.div>

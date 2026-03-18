@@ -42,8 +42,7 @@ export default function TransactionForm({
     type: "expense" as "credit" | "expense",
     mode: "digital" as "digital" | "in_hand",
     category: "",
-    account_id:
-      selectedAccountId === "0" ? accounts[0]?.id || "" : selectedAccountId,
+    account_id: selectedAccountId !== "0" ? selectedAccountId : "",
     date: new Date().toISOString().slice(0, 10),
     description: "",
   });
@@ -57,11 +56,6 @@ export default function TransactionForm({
   useEffect(() => {
     if (selectedAccountId !== "0") {
       setFormData((prev) => ({ ...prev, account_id: selectedAccountId }));
-    } else if (
-      accounts.length > 0 &&
-      (!formData.account_id || formData.account_id === "0")
-    ) {
-      setFormData((prev) => ({ ...prev, account_id: accounts[0].id }));
     }
   }, [selectedAccountId, accounts]);
 
@@ -80,9 +74,22 @@ export default function TransactionForm({
       return;
     }
 
-    if (!formData.account_id || formData.account_id === "0") {
-      setError("Please select a valid account for this transaction.");
+    if (formData.mode === "digital" && !formData.account_id) {
+      setError("Please select a bank account for digital transactions.");
       return;
+    }
+
+    if (formData.mode === "digital") {
+      const isValidAccount = accounts.some(
+        (acc) => String(acc.id) === String(formData.account_id)
+      );
+
+      if (!isValidAccount) {
+        setError(
+          "Please select a valid bank account for digital transactions."
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -106,8 +113,7 @@ export default function TransactionForm({
         type: "expense",
         mode: "digital",
         category: categories[0]?.name || "",
-        account_id:
-          selectedAccountId === "0" ? accounts[0]?.id || "" : selectedAccountId,
+        account_id: selectedAccountId !== "0" ? selectedAccountId : "",
         date: new Date().toISOString().slice(0, 10),
         description: "",
       });
@@ -223,13 +229,29 @@ export default function TransactionForm({
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-destructive/10 border border-destructive/20 p-3 rounded-xl flex items-center gap-3 text-destructive text-[10px] font-bold"
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-start gap-3 p-4 rounded-2xl border bg-destructive/10 border-destructive/20"
           >
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
+            <div className="mt-0.5">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            </div>
+
+            <div className="flex-1 space-y-1">
+              <p className="text-sm text-destructive/90 font-medium leading-relaxed">
+                {error}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="p-1 rounded-md hover:bg-destructive/10 transition"
+            >
+              <X className="w-4 h-4 text-destructive/70 hover:text-destructive" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -278,7 +300,9 @@ export default function TransactionForm({
           <div className="flex gap-2 p-1 bg-muted border border-border rounded-2xl">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, mode: "digital" })}
+              onClick={() =>
+                setFormData({ ...formData, mode: "digital", account_id: "" })
+              }
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
                 formData.mode === "digital"
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"

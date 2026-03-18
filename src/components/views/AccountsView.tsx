@@ -101,7 +101,7 @@ export default function AccountsView({
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button
+          {/* <button
             id="tour-banks-refresh"
             onClick={handleRefresh}
             disabled={isSyncing}
@@ -111,11 +111,11 @@ export default function AccountsView({
               className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
             />
             {isSyncing ? "Syncing..." : "Refresh"}
-          </button>
+          </button> */}
           <button
             id="tour-banks-transfer"
             onClick={() => setShowTransfer(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
           >
             <ArrowRightLeft className="w-4 h-4" />
             Transfer

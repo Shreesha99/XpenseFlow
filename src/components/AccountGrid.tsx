@@ -197,14 +197,14 @@ export default function AccountGrid({
           </div>
         </div>
       )}
-      <div className="hidden md:flex items-center justify-between gap-4 p-4 border border-border rounded-3xl bg-linear-to-b from-card to-card/50 backdrop-blur-xl mb-4 shadow-sm z-99999">
+      <div className="hidden md:flex flex-wrap items-center gap-3 p-4 border border-border rounded-3xl bg-linear-to-b from-card to-card/50 backdrop-blur-xl mb-4 shadow-sm">
         {/* LEFT SIDE */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
           <CustomSelect
             options={typeOptions}
             value={filterType}
             onChange={(v) => setFilterType(v as any)}
-            className="w-40"
+            className="min-w-[140px] flex-1"
             showDefaultIcon={false}
           />
 
@@ -212,14 +212,14 @@ export default function AccountGrid({
             options={modeOptions}
             value={filterMode}
             onChange={(v) => setFilterMode(v as any)}
-            className="w-40"
+            className="min-w-[140px] flex-1"
           />
 
           <CustomSelect
             options={accountOptions}
             value={filterAccount}
             onChange={(v) => setFilterAccount(v)}
-            className="w-45"
+            className="min-w-[160px] flex-1"
           />
         </div>
 
@@ -368,8 +368,15 @@ export default function AccountGrid({
                     </div>
                   </td>
                   <td className="p-5">
-                    <span className="px-3 py-1 rounded-full bg-muted border border-border text-[9px] font-bold text-muted-foreground uppercase tracking-widest group-hover:border-emerald-500/20 transition-colors">
-                      {t.category}
+                    <span
+                      className={`px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-widest transition-colors
+    ${
+      t.category
+        ? "bg-muted border-border text-muted-foreground group-hover:border-emerald-500/20"
+        : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+    }`}
+                    >
+                      {t.category || "Uncategorized"}
                     </span>
                   </td>
                   <td className="p-5 text-center">
@@ -406,7 +413,7 @@ export default function AccountGrid({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden w-full overflow-hidden"
+            className="md:hidden w-full overflow-visible"
           >
             <div className="mt-2 p-3 rounded-xl border border-border bg-muted/40 flex flex-col gap-3">
               {/* Type */}
