@@ -79,6 +79,10 @@ export default function DashboardInsights({
       { name: "Cash", value: inHand, color: amber },
     ];
   }, [transactions]);
+  const total = modeData.reduce((a, b) => a + b.value, 0);
+  const digitalPercent = total
+    ? Math.round((modeData[0].value / total) * 100)
+    : 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -152,14 +156,28 @@ export default function DashboardInsights({
                 }
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "card",
-                  border: `1px solid border`,
-                  color: "white",
-                  borderRadius: "16px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+
+                  return (
+                    <div className="bg-card border border-border rounded-2xl p-3 shadow-xl backdrop-blur-xl">
+                      <p className="text-[10px] uppercase text-muted-foreground mb-2">
+                        {label}
+                      </p>
+
+                      {payload.map((entry, i) => (
+                        <div
+                          key={i}
+                          className="flex justify-between gap-4 text-sm font-semibold"
+                        >
+                          <span style={{ color: entry.color }}>
+                            {entry.name}
+                          </span>
+                          <span>₹{Number(entry.value).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
                 }}
               />
               <Area
@@ -203,59 +221,63 @@ export default function DashboardInsights({
                   data={modeData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={8}
+                  innerRadius={65}
+                  outerRadius={90}
+                  paddingAngle={4}
                   dataKey="value"
+                  stroke="none"
                 >
                   {modeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={index} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <TrendingUp className="w-5 h-5 text-emerald-500 mb-1" />
+              <TrendingUp className="w-4 h-4 text-emerald-500 mb-1 opacity-80" />
+
+              <p className="text-2xl font-bold text-foreground leading-none">
+                {digitalPercent}%
+              </p>
+
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Ratio
+                Digital
               </span>
             </div>
           </div>
 
           <div className="space-y-6">
-            {modeData.map((item) => (
-              <div key={item.name} className="space-y-2">
-                <div className="flex items-center justify-between">
+            {modeData.map((item) => {
+              const percent =
+                total > 0 ? Math.round((item.value / total) * 100) : 0;
+
+              return (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-2">
-                    {item.name === "Digital" ? (
-                      <Smartphone className="w-3 h-3 text-emerald-500" />
-                    ) : (
-                      <Banknote className="w-3 h-3 text-amber-500" />
-                    )}
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-xs font-semibold text-foreground">
                       {item.name}
                     </span>
                   </div>
-                  <span className="text-xs font-bold">
-                    ₹{item.value.toLocaleString()}
-                  </span>
+
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-foreground">
+                      ₹{item.value.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {percent}%
+                    </p>
+                  </div>
                 </div>
-                <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-1000"
-                    style={{
-                      width: `${
-                        (item.value /
-                          (modeData.reduce((a, b) => a + b.value, 0) || 1)) *
-                        100
-                      }%`,
-                      backgroundColor: item.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="pt-4 border-t border-border mt-4">
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] leading-relaxed">
