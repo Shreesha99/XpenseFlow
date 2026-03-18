@@ -1,8 +1,9 @@
-import { FileText, Table } from "lucide-react";
+import { ChevronDown, FileText, Table } from "lucide-react";
 import { Transaction } from "../types";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { useState } from "react";
 
 interface ReportExportProps {
   transactions: Transaction[];
@@ -141,25 +142,47 @@ export default function ReportExport({ transactions }: ReportExportProps) {
     link.click();
     document.body.removeChild(link);
   };
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex items-center gap-2" id="report-export">
+    <div className="relative" id="report-export">
+      {/* Trigger */}
       <button
-        onClick={exportPDF}
-        className="flex items-center gap-2 px-2.5 md:px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-        title="Export PDF"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 border border-border text-sm font-semibold hover:bg-accent transition-all"
       >
-        <FileText className="w-4 h-4" />
-        <span className="hidden md:inline">PDF</span>
+        Export
+        <ChevronDown
+          className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
-      <button
-        onClick={exportCSV}
-        className="flex items-center gap-2 px-2.5 md:px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-lg hover:bg-accent transition-colors"
-        title="Export CSV"
-      >
-        <Table className="w-4 h-4" />
-        <span className="hidden md:inline">CSV</span>
-      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 mt-2 w-44 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+          <button
+            onClick={() => {
+              exportPDF();
+              setOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            Export as PDF
+          </button>
+
+          <button
+            onClick={() => {
+              exportCSV();
+              setOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+          >
+            <Table className="w-4 h-4" />
+            Export as CSV
+          </button>
+        </div>
+      )}
     </div>
   );
 }

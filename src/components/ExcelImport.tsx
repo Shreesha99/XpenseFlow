@@ -21,6 +21,7 @@ import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Account } from "../types";
 import CustomSelect from "./shared/CustomSelect";
 import BankLogo from "./ui/BankLogo";
+import { motion } from "motion/react";
 
 interface ExcelImportProps {
   onImport: () => void;
@@ -506,12 +507,29 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
 
   return (
     <div className="space-y-4" id="excel-import">
-      <div className="flex items-center gap-3 p-4 rounded-xl border bg-yellow-500/10 border-yellow-500/20 text-yellow-700">
-        <AlertTriangle className="w-5 h-5" />
-        <span className="text-sm font-medium">
-          Password-protected statements are not supported yet. Please upload a
-          file without a password.
-        </span>
+      <div className="flex items-start gap-3 p-4 rounded-xl border bg-yellow-500/10 border-yellow-500/20 text-yellow-700">
+        <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
+
+        <div className="flex flex-col">
+          <span className="text-sm font-medium leading-snug">
+            Password-protected statements are not supported yet. Please upload a
+            file without a password.
+          </span>
+
+          <motion.span
+            animate={{
+              opacity: [1, 0.4, 1],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="text-xs opacity-80 mt-1"
+          >
+            Currently supports HDFC and SBI statements. More banks coming soon.
+          </motion.span>
+        </div>
       </div>
       <CustomSelect
         label="Select Bank Account"
