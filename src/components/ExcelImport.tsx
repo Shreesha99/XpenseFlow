@@ -40,6 +40,22 @@ const detectBankFromSheet = (rows: any[][]) => {
 };
 
 const cleanNarration = (narration: string) => {
+  if (narration.includes("/")) {
+    const parts = narration.split("/").map((p) => p.trim());
+
+    const possible = parts.find(
+      (p) =>
+        p &&
+        !p.toLowerCase().includes("upi") &&
+        !p.toLowerCase().includes("dr") &&
+        !p.toLowerCase().includes("wdl") &&
+        !p.toLowerCase().includes("tfr")
+    );
+
+    if (possible) {
+      narration = possible;
+    }
+  }
   if (!narration) return "Transaction";
 
   let text = narration.trim();
@@ -164,11 +180,21 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
             }
           }
 
-          detectBankFromSheet(rows);
+          const bank = detectBankFromSheet(rows);
+          console.log("DETECTED BANK:", bank);
 
           let headerRowIndex = rows.findIndex((row) =>
             row.some((cell: any) => {
               const c = String(cell).toLowerCase();
+
+              if (bank === "sbi") {
+                return (
+                  c.includes("date") &&
+                  row.join(" ").toLowerCase().includes("details")
+                );
+              }
+
+              // existing logic
               return (
                 c.includes("narration") ||
                 c.includes("description") ||
@@ -179,17 +205,30 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
             })
           );
 
+          console.log("HEADER INDEX:", headerRowIndex);
+          console.log("HEADER ROW:", rows[headerRowIndex]);
+
           if (headerRowIndex === -1) headerRowIndex = 0;
 
           const rawData = XLSX.utils.sheet_to_json<any[]>(sheet, {
             header: 1,
           });
 
-          const headers = (rawData[headerRowIndex] as any[]).map((h: any) =>
+          let headers = (rawData[headerRowIndex] as any[]).map((h: any) =>
             String(h || "")
               .toLowerCase()
               .trim()
           );
+
+          // 🔥 SBI FIX (no impact on others)
+          if (bank === "sbi") {
+            headers = headers.map((h) => {
+              if (h === "details") return "narration";
+              if (h === "debit") return "withdrawal";
+              if (h === "credit") return "deposit";
+              return h;
+            });
+          }
 
           const jsonData = rawData
             .slice(headerRowIndex + 1)
@@ -264,20 +303,64 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
                 return null;
               }
 
-              const parseAmount = (val: any) =>
-                parseFloat(String(val || "0").replace(/,/g, "")) || 0;
-              const creditAmt = parseAmount(credit);
-              const debitAmt = parseAmount(debit);
+              const parseAmount = (val: any) => {
+                if (val === null || val === undefined) return 0;
+
+                const cleaned = String(val).replace(/,/g, "").trim();
+
+                if (cleaned === "" || cleaned === "-") return 0;
+
+                return parseFloat(cleaned) || 0;
+              };
+              let creditAmt = parseAmount(credit);
+              let debitAmt = parseAmount(debit);
+
+              if (bank === "sbi") {
+                if (!creditAmt && credit) {
+                  creditAmt = parseAmount(credit);
+                }
+
+                if (!debitAmt && debit) {
+                  debitAmt = parseAmount(debit);
+                }
+              }
+
+              console.log("SBI ROW:", {
+                narration,
+                debit,
+                credit,
+                debitAmt,
+                creditAmt,
+              });
 
               if (creditAmt === 0 && debitAmt === 0) {
+                console.log("❌ Skipping row (both zero):", narration);
                 return null;
               }
 
               let amount = 0;
               let type: "expense" | "credit";
 
-              if (creditAmt > 0 && debitAmt > 0) {
-                return null;
+              if (bank === "sbi") {
+                if (creditAmt > 0) {
+                  amount = creditAmt;
+                  type = "credit";
+                } else {
+                  amount = debitAmt;
+                  type = "expense";
+                }
+              } else {
+                if (creditAmt > 0 && debitAmt > 0) {
+                  return null;
+                }
+
+                if (creditAmt > 0) {
+                  amount = creditAmt;
+                  type = "credit";
+                } else {
+                  amount = debitAmt;
+                  type = "expense";
+                }
               }
 
               if (creditAmt > 0) {

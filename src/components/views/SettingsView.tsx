@@ -175,7 +175,7 @@ export default function SettingsView({
                   Bulk Data Import
                 </h3>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Sync your external statements with XpenseFlow.
+                  Sync your external statements with Xpense Flow.
                 </p>
               </div>
             </div>

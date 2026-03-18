@@ -30,7 +30,7 @@ export default function AppLoader() {
 
           {/* Brand */}
           <h1 className="text-2xl font-black tracking-tight">
-            Xpense<span className="text-emerald-500">Flow</span>
+            Xpense<span className="text-emerald-500"> Flow</span>
           </h1>
         </motion.div>
 

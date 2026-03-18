@@ -82,7 +82,7 @@ export default function TopBar({
           <div className="flex items-center gap-2">
             <img src="/logo.svg" alt="logo" className="w-10 h-10" />
             <h1 className="text-xs font-bold tracking-tight text-foreground">
-              XpenseFlow
+              Xpense Flow
             </h1>
           </div>
           <div className="flex items-center gap-1.5">

@@ -51,7 +51,7 @@ export default function Sidebar({
           <img src="/logo.svg" alt="logo" className="w-10 h-10" />
           <div className="hidden lg:block overflow-hidden">
             <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
-              XpenseFlow
+              Xpense Flow
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold whitespace-nowrap">
               Command Center
