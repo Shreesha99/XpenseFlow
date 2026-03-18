@@ -197,14 +197,14 @@ export default function AccountGrid({
           </div>
         </div>
       )}
-      <div className="hidden md:flex flex-wrap items-center gap-3 p-4 border border-border rounded-3xl bg-linear-to-b from-card to-card/50 backdrop-blur-xl mb-4 shadow-sm">
+      <div className="hidden md:flex flex-wrap items-center gap-3 p-4 border border-border rounded-3xl bg-linear-to-b from-card to-card/50 mb-4 shadow-sm">
         {/* LEFT SIDE */}
         <div className="flex flex-wrap items-center gap-3 flex-1">
           <CustomSelect
             options={typeOptions}
             value={filterType}
             onChange={(v) => setFilterType(v as any)}
-            className="min-w-[140px] flex-1"
+            className="min-w-35 flex-1"
             showDefaultIcon={false}
           />
 
@@ -212,14 +212,14 @@ export default function AccountGrid({
             options={modeOptions}
             value={filterMode}
             onChange={(v) => setFilterMode(v as any)}
-            className="min-w-[140px] flex-1"
+            className="min-w-35 flex-1"
           />
 
           <CustomSelect
             options={accountOptions}
             value={filterAccount}
             onChange={(v) => setFilterAccount(v)}
-            className="min-w-[160px] flex-1"
+            className="min-w-40 flex-1"
           />
         </div>
 

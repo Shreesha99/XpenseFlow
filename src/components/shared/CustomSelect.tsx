@@ -146,6 +146,7 @@ export default function CustomSelect({
               {options.map((option) => (
                 <button
                   key={option.id}
+                  type="button"
                   onClick={() => {
                     onChange(String(option.id));
                     setIsOpen(false);

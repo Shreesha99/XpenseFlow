@@ -1,7 +1,13 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
-import { FileUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  FileUp,
+  AlertCircle,
+  CheckCircle2,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
 import {
   db,
   auth,
@@ -112,7 +118,21 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
           const data = e.target?.result;
           if (!data) return;
 
-          const workbook = XLSX.read(data, { type: "binary" });
+          let workbook;
+
+          try {
+            workbook = XLSX.read(data, { type: "binary" });
+          } catch (err) {
+            console.error("🚫 Encrypted file:", err);
+
+            setStatus({
+              type: "error",
+              message:
+                "This file seems to be password protected… the note above might help",
+            });
+
+            return;
+          }
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
           const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -403,6 +423,13 @@ export default function ExcelImport({ onImport, accounts }: ExcelImportProps) {
 
   return (
     <div className="space-y-4" id="excel-import">
+      <div className="flex items-center gap-3 p-4 rounded-xl border bg-yellow-500/10 border-yellow-500/20 text-yellow-700">
+        <AlertTriangle className="w-5 h-5" />
+        <span className="text-sm font-medium">
+          Password-protected statements are not supported yet. Please upload a
+          file without a password.
+        </span>
+      </div>
       <CustomSelect
         label="Select Bank Account"
         options={(accounts || []).map((acc) => ({
