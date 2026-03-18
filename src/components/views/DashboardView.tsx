@@ -160,7 +160,7 @@ export default function DashboardView({
           </p>
         </div>
 
-        <DashboardInsights transactions={transactions} />
+        <DashboardInsights transactions={filteredTransactions} />
       </section>
 
       <div className="space-y-10">
