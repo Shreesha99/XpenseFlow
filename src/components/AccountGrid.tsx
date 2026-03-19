@@ -103,8 +103,16 @@ export default function AccountGrid({
 
   const modeOptions = [
     { id: "all", name: "All Modes" },
-    { id: "digital", name: "Digital" },
-    { id: "cash", name: "Cash" },
+    {
+      id: "digital",
+      name: "Digital",
+      icon: <Smartphone className="w-3 h-3" />,
+    },
+    {
+      id: "cash",
+      name: "Cash",
+      icon: <Banknote className="w-3 h-3" />,
+    },
   ];
 
   const accountOptions = [
@@ -112,6 +120,7 @@ export default function AccountGrid({
     ...accounts.map((acc) => ({
       id: String(acc.id),
       name: acc.name,
+      icon: <BankLogo url={acc.logo_url} name={acc.name} className="w-4 h-4" />,
     })),
   ];
 
@@ -127,23 +136,28 @@ export default function AccountGrid({
       return true;
     });
 
-    // SORTING
     data.sort((a, b) => {
-      let valA: number = 0;
-      let valB: number = 0;
+      let result = 0;
 
       if (sortKey === "date") {
-        valA = new Date(a.date || 0).getTime();
-        valB = new Date(b.date || 0).getTime();
+        const timeA = a.date ? new Date(a.date).getTime() : 0;
+        const timeB = b.date ? new Date(b.date).getTime() : 0;
+        result = timeA - timeB;
       } else if (sortKey === "amount") {
-        valA = a.amount || 0;
-        valB = b.amount || 0;
+        result = (a.amount || 0) - (b.amount || 0);
       } else if (sortKey === "type") {
-        valA = a.type === "credit" ? 1 : 0;
-        valB = b.type === "credit" ? 1 : 0;
+        const order = { credit: 1, expense: 2 };
+        result = order[a.type] - order[b.type];
       }
 
-      return sortOrder === "asc" ? valA - valB : valB - valA;
+      // ✅ fallback tie-breaker (VERY IMPORTANT)
+      if (result === 0) {
+        const timeA = a.date ? new Date(a.date).getTime() : 0;
+        const timeB = b.date ? new Date(b.date).getTime() : 0;
+        result = timeB - timeA; // latest first
+      }
+
+      return sortOrder === "asc" ? result : -result;
     });
 
     return data;
