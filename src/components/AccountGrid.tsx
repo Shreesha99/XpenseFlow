@@ -264,134 +264,101 @@ export default function AccountGrid({
         </div>
       </div>
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto rounded-3xl border border-border bg-card/50">
-        <table className="w-full text-xs text-foreground border-collapse">
-          <thead>
-            <tr className="text-muted-foreground uppercase tracking-[0.2em] text-[10px] font-bold border-b border-border bg-muted/30">
-              <th
-                onClick={() => {
-                  setSortKey("date");
-                  setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                }}
-                className="p-5 text-left font-bold cursor-pointer hover:text-foreground"
-              >
-                Date
-              </th>
-              <th className="p-5 text-left font-bold">Credits</th>
-              <th className="p-5 text-right font-bold">Amount</th>
-              <th className="p-5 text-left font-bold">Expenses</th>
-              <th className="p-5 text-right font-bold">Amount</th>
-              <th className="p-5 text-left font-bold">Bank</th>
-              <th className="p-5 text-left font-bold">Category</th>
-              <th className="p-5 text-center font-bold w-10"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {processedTransactions.map((t) => {
-              const account = accountMap[String(t.account_id)];
+      <div className="hidden md:block rounded-3xl border border-border bg-card/50 overflow-hidden">
+        {/* HEADER */}
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed text-xs border-collapse">
+            <thead className="bg-muted/30 text-muted-foreground uppercase tracking-[0.2em] text-[10px] font-bold border-b border-border">
+              <tr>
+                <th className="p-5 text-left w-30">Date</th>
+                <th className="p-5 text-left">Credits</th>
+                <th className="p-5 text-right w-30">Amount</th>
+                <th className="p-5 text-left">Expenses</th>
+                <th className="p-5 text-right w-30">Amount</th>
+                <th className="p-5 text-left w-35">Bank</th>
+                <th className="p-5 text-left w-35">Category</th>
+                <th className="p-5 text-center w-15"></th>
+              </tr>
+            </thead>
+          </table>
+        </div>
 
-              return (
-                <tr
-                  key={t.id}
-                  className="group hover:bg-emerald-500/2 transition-colors"
-                >
-                  <td className="p-5 text-muted-foreground font-mono">
-                    {t.date ? format(new Date(t.date), "dd.MM.yy") : "—"}
-                  </td>
-                  <td className="p-5">
-                    {t.type === "credit" ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                        <span className="text-foreground font-semibold tracking-tight">
-                          {t.title}
-                        </span>
-                        <span
-                          className={`text-[8px] px-1.5 py-0.5 rounded-full border ${
-                            t.mode === "digital"
-                              ? "border-blue-500/20 bg-blue-500/5 text-blue-400"
-                              : "border-amber-500/20 bg-amber-500/5 text-amber-400"
-                          } uppercase font-bold tracking-widest`}
-                        >
-                          {t.mode === "digital" ? "Digital" : "Cash"}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground/10">—</span>
-                    )}
-                  </td>
-                  <td className="p-5 text-right font-mono font-medium text-emerald-500">
-                    {t.type === "credit"
-                      ? `₹${(t.amount || 0).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}`
-                      : ""}
-                  </td>
-                  <td className="p-5">
-                    {t.type === "expense" ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
-                        <span className="text-foreground font-semibold tracking-tight">
-                          {t.title}
-                        </span>
-                        <span
-                          className={`text-[8px] px-1.5 py-0.5 rounded-full border ${
-                            t.mode === "digital"
-                              ? "border-blue-500/20 bg-blue-500/5 text-blue-400"
-                              : "border-amber-500/20 bg-amber-500/5 text-amber-400"
-                          } uppercase font-bold tracking-widest`}
-                        >
-                          {t.mode === "digital" ? "Digital" : "Cash"}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground/10">—</span>
-                    )}
-                  </td>
-                  <td className="p-5 text-right font-mono font-medium text-rose-500">
-                    {t.type === "expense"
-                      ? `₹${(t.amount || 0).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}`
-                      : ""}
-                  </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-2">
-                      <BankLogo
-                        url={account?.logo_url}
-                        name={account?.name || "Main"}
-                        className="w-4 h-4"
-                      />
+        {/* BODY */}
+        <div className="max-h-125 overflow-y-auto overflow-x-auto">
+          <table className="w-full table-fixed text-xs border-collapse">
+            <tbody className="divide-y divide-border">
+              {processedTransactions.map((t) => {
+                const account = accountMap[String(t.account_id)];
 
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                return (
+                  <tr
+                    key={t.id}
+                    className="group hover:bg-emerald-500/2 transition-colors"
+                  >
+                    <td className="p-5 text-muted-foreground font-mono w-30">
+                      {t.date ? format(new Date(t.date), "dd.MM.yy") : "--"}
+                    </td>
+
+                    <td className="p-5">
+                      {t.type === "credit" ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="font-semibold">{t.title}</span>
+                        </div>
+                      ) : (
+                        <span className="opacity-10">--</span>
+                      )}
+                    </td>
+
+                    <td className="p-5 text-right font-mono text-emerald-500 w-30">
+                      {t.type === "credit"
+                        ? `₹${t.amount?.toLocaleString()}`
+                        : ""}
+                    </td>
+
+                    <td className="p-5">
+                      {t.type === "expense" ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-rose-500" />
+                          <span className="font-semibold">{t.title}</span>
+                        </div>
+                      ) : (
+                        <span className="opacity-10">--</span>
+                      )}
+                    </td>
+
+                    <td className="p-5 text-right font-mono text-rose-500 w-30">
+                      {t.type === "expense"
+                        ? `₹${t.amount?.toLocaleString()}`
+                        : ""}
+                    </td>
+
+                    <td className="p-5 w-35">
+                      <span className="text-[10px] font-bold uppercase">
                         {account?.name || "Main"}
                       </span>
-                    </div>
-                  </td>
-                  <td className="p-5">
-                    <span
-                      className={`px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-widest transition-colors
-    ${
-      t.category
-        ? "bg-muted border-border text-muted-foreground group-hover:border-emerald-500/20"
-        : "bg-amber-500/10 border-amber-500/20 text-amber-400"
-    }`}
-                    >
-                      {t.category || "Uncategorized"}
-                    </span>
-                  </td>
-                  <td className="p-5 text-center">
-                    <button
-                      onClick={() => onDelete(t.id)}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+
+                    <td className="p-5 w-35">
+                      <span className="text-[10px] font-bold uppercase">
+                        {t.category || "Uncategorized"}
+                      </span>
+                    </td>
+
+                    <td className="p-5 text-center w-15">
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        className="p-2 hover:text-rose-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
       <div className="md:hidden w-full">
         <button
