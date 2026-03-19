@@ -106,8 +106,12 @@ export default function Calculator({
           cycle: raw.cycle,
           dueDay: raw.dueDay,
           settledMonths: raw.settled || [],
+          createdAt: raw.createdAt || 0,
         };
       });
+
+      data.sort((a, b) => b.createdAt - a.createdAt);
+
       setItems(data);
     });
 
@@ -222,6 +226,7 @@ export default function Calculator({
       dueDay: 1,
       settled: [],
       uid: auth.currentUser.uid,
+      createdAt: Date.now(),
     });
   };
 
