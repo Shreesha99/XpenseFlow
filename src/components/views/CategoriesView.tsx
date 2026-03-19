@@ -33,7 +33,7 @@ export default function CategoriesView({
       className="space-y-8 md:space-y-12"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-12">
         <div>
           <h2 className="text-4xl font-bold tracking-tighter">Categories</h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -43,7 +43,7 @@ export default function CategoriesView({
 
         <button
           onClick={onAdd}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all"
         >
           <Plus className="w-4 h-4" />
           New Category

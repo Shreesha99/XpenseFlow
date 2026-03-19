@@ -653,6 +653,7 @@ function AppContent() {
         setActiveView={setActiveView}
         run={runTour}
         setRun={setRunTour}
+        accountCount={accounts.length}
       />
       {/* Sidebar Navigation - Pro Rail */}
       <Sidebar
@@ -752,21 +753,13 @@ function AppContent() {
             )}
 
             {activeView === "planning" && (
-              <motion.div
-                key="planning"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
-              >
-                <SubscriptionsView
-                  stats={stats}
-                  currentBalance={actualCurrentBalance}
-                  filterMode={filterMode}
-                  filterDate={filterDate}
-                  customRange={customRange}
-                />
-              </motion.div>
+              <SubscriptionsView
+                stats={stats}
+                currentBalance={actualCurrentBalance}
+                filterMode={filterMode}
+                filterDate={filterDate}
+                customRange={customRange}
+              />
             )}
 
             {activeView === "categories" && (

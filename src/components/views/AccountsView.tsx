@@ -454,6 +454,7 @@ export default function AccountsView({
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className="p-8 bg-muted/30 border border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-muted/50 hover:border-emerald-500/50 transition-all group cursor-pointer"
+              id="tour-add-first-account"
             >
               <div className="w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Plus className="w-6 h-6 text-muted-foreground group-hover:text-emerald-500" />

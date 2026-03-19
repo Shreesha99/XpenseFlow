@@ -1,11 +1,12 @@
 import { motion } from "motion/react";
 import { LogIn, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { UserCredential } from "firebase/auth";
 
 export default function LoginScreen({
   signIn,
 }: {
-  signIn: () => Promise<void>;
+  signIn: () => Promise<UserCredential>;
 }) {
   const [loading, setLoading] = useState(false);
 
