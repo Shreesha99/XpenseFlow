@@ -33,7 +33,10 @@ export default function CategoriesView({
       className="space-y-8 md:space-y-12"
     >
       {/* Header */}
-      <div className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-12">
+      <div
+        id="tour-categories-header"
+        className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-12"
+      >
         <div>
           <h2 className="text-4xl font-bold tracking-tighter">Categories</h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -42,6 +45,7 @@ export default function CategoriesView({
         </div>
 
         <button
+          id="tour-categories-new"
           onClick={onAdd}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all"
         >
@@ -89,7 +93,10 @@ export default function CategoriesView({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div
+          id="tour-categories-grid"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+        >
           {categories.map((cat) => {
             const stat = stats?.categoryStats.find(
               (s) => s.category === cat.name

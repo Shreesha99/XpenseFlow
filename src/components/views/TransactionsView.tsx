@@ -40,7 +40,10 @@ export default function TransactionsView({
       className="space-y-8"
     >
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div
+        id="tour-ledger-header"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
         <div>
           <h2 className="text-4xl font-bold tracking-tighter">
             Financial Ledger
@@ -69,14 +72,16 @@ export default function TransactionsView({
       </div>
 
       {/* Table */}
-      <AccountGrid
-        transactions={filtered}
-        stats={stats}
-        onDelete={onDelete}
-        actualBalances={actualBalances}
-        totalNetWorth={totalNetWorth}
-        accounts={accounts}
-      />
+      <div id="tour-ledger-table">
+        <AccountGrid
+          transactions={filtered}
+          stats={stats}
+          onDelete={onDelete}
+          actualBalances={actualBalances}
+          totalNetWorth={totalNetWorth}
+          accounts={accounts}
+        />
+      </div>
     </motion.div>
   );
 }

@@ -116,64 +116,136 @@ export default function OnboardingTour({
       transactions: [
         {
           target: "#tour-ledger-header",
+          title: "Your financial history 📜",
           content:
-            "This is your full financial history. Every transaction is recorded here.",
-          title: "Financial Ledger 📜",
-          placement: "bottom",
-        },
-        {
-          target: "#tour-ledger-filters",
-          content: "Filter your ledger to see only income or only expenses.",
-          title: "Quick Filters",
+            "Every transaction you record appears here. This is your single source of truth.",
           placement: "bottom",
         },
         {
           target: "#tour-ledger-table",
+          title: "Track everything",
           content:
-            "Review, edit, or delete your transactions from this detailed table.",
-          title: "Transaction History",
+            "Review, delete, and analyze your transactions across all accounts.",
           placement: "top",
         },
       ],
       planning: [
         {
-          target: "#tour-planning-view",
+          target: "#tour-planning-header",
+          title: "Plan your future 💡",
           content:
-            "Plan your future spending and manage recurring subscriptions here.",
-          title: "Financial Planning 📅",
-          placement: "top",
-        },
-      ],
-      categories: [
-        {
-          target: "#tour-categories-header",
-          content: "Organize your spending by creating custom categories.",
-          title: "Categories 🏷️",
+            "This section helps you understand upcoming expenses and manage recurring subscriptions.",
           placement: "bottom",
         },
         {
-          target: "#tour-categories-new",
+          target: "#tour-planning-stats",
+          title: "Your projections",
           content:
-            "Add a new category to better track your specific spending habits.",
-          title: "Add Category",
+            "These cards show your projected balance, planning scope, and number of active subscriptions.",
           placement: "bottom",
         },
         {
-          target: "#tour-categories-grid",
+          target: "#tour-planning-calculator",
+          title: "Smart calculator",
           content:
-            "Manage your existing categories and see a quick summary of activity for each.",
-          title: "Category Management",
+            "Simulate your financial future based on your current income and spending patterns.",
           placement: "top",
         },
-      ],
-      settings: [
         {
-          target: "#tour-settings-view",
-          content: "Customize your profile and application preferences here.",
-          title: "Settings ⚙️",
-          placement: "top",
+          target: "#tour-add-subscription",
+          title: "Add subscriptions",
+          content:
+            "Track recurring payments like Netflix, rent, or EMIs to improve forecasting.",
+          placement: "bottom",
         },
       ],
+      categories: (() => {
+        return [
+          {
+            target: "#tour-categories-header",
+            title: "Your categories",
+            content:
+              "Manage and organize all your financial activity with categories.",
+            placement: "bottom",
+          },
+          {
+            target: "#tour-categories-new",
+            title: "Add new categories",
+            content:
+              "Create custom categories to better track your spending habits.",
+            placement: "bottom",
+          },
+          {
+            target: "#tour-categories-grid",
+            title: "Category insights",
+            content:
+              "Each category shows income and expenses so you can analyze trends.",
+            placement: "top",
+          },
+        ];
+      })(),
+      settings: (() => {
+        if (accountCount === 0) {
+          return [
+            {
+              target: "#tour-settings-view",
+              title: "Setup your workspace ⚙️",
+              content:
+                "This is where you configure your financial system and manage your data.",
+              placement: "top",
+            },
+            {
+              target: "#tour-settings-add-account",
+              title: "Add your first account",
+              content:
+                "You need at least one account to start tracking transactions.",
+              placement: "top",
+            },
+          ];
+        }
+
+        return [
+          {
+            target: "#tour-settings-view",
+            title: "Settings overview ⚙️",
+            content:
+              "Manage your accounts, preferences, imports, and security from here.",
+            placement: "top",
+          },
+          {
+            target: "#tour-settings-accounts",
+            title: "Manage accounts",
+            content:
+              "View, organize, and delete your connected bank accounts and wallets.",
+            placement: "top",
+          },
+          {
+            target: "#tour-settings-import",
+            title: "Import data",
+            content:
+              "Upload bank statements to quickly sync your transaction history.",
+            placement: "top",
+          },
+          {
+            target: "#tour-settings-preferences",
+            title: "Preferences",
+            content: "Customize how your financial workspace behaves.",
+            placement: "top",
+          },
+          {
+            target: "#tour-settings-security",
+            title: "Security",
+            content: "Your data is encrypted and protected at all times.",
+            placement: "top",
+          },
+          {
+            target: "#tour-settings-profile",
+            title: "Account control",
+            content: "Manage your profile or securely sign out from here.",
+            placement: "top",
+          },
+        ];
+      })(),
     }),
     []
   );

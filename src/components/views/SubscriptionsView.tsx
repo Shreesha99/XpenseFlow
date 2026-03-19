@@ -23,6 +23,7 @@ export default function SubscriptionsView({
   const [subCount, setSubCount] = useState(0);
   return (
     <motion.div
+      id="tour-planning-view"
       key="planning"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -31,7 +32,10 @@ export default function SubscriptionsView({
       className="space-y-8 md:space-y-12"
     >
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div
+        id="tour-planning-header"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
         <div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
             Subscriptions
@@ -44,6 +48,7 @@ export default function SubscriptionsView({
         {/* ACTIONS */}
         <div className="flex items-center gap-3">
           <button
+            id="tour-add-subscription"
             onClick={() => window.dispatchEvent(new Event("add-subscription"))}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all"
           >
@@ -61,7 +66,10 @@ export default function SubscriptionsView({
           </div> */}
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div
+        id="tour-planning-stats"
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      >
         <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-6">
           <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">
             Projected Net
@@ -87,14 +95,16 @@ export default function SubscriptionsView({
       </div>
 
       {/* CONTENT */}
-      <Calculator
-        stats={stats}
-        currentBalance={currentBalance}
-        filterMode={filterMode}
-        filterDate={filterDate}
-        customRange={customRange}
-        onCountChange={setSubCount}
-      />
+      <div id="tour-planning-calculator">
+        <Calculator
+          stats={stats}
+          currentBalance={currentBalance}
+          filterMode={filterMode}
+          filterDate={filterDate}
+          customRange={customRange}
+          onCountChange={setSubCount}
+        />
+      </div>
     </motion.div>
   );
 }
