@@ -41,7 +41,11 @@ async function startServer() {
         },
       })
     );
-    app.get("*", (req, res) => {
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/assets")) {
+        return next(); // let static serve JS/CSS
+      }
+
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       res.sendFile(path.join(distPath, "index.html"));
     });
