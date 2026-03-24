@@ -42,6 +42,7 @@ import {
   doc,
   updateDoc,
   User,
+  Timestamp,
 } from "./firebase";
 import SettingsView from "./components/views/SettingsView";
 import SubscriptionsView from "./components/views/SubscriptionsView";
@@ -537,7 +538,7 @@ function AppContent() {
       setTransferStatus({ type: "loading" });
 
       const date = new Date().toISOString().slice(0, 10);
-      const createdAt = new Date().toISOString();
+      const createdAt = Timestamp.now();
 
       await Promise.all([
         addDoc(collection(db, "transactions"), {

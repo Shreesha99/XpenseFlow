@@ -26,9 +26,20 @@ import {
   getDocFromServer,
 } from "firebase/firestore";
 import firebaseConfig from "../firebase-applet-config.json";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+// 🔐 ADD THIS
+initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider(
+    "6LeKX5YsAAAAAGMCNGqCkyKUoGrS41HwhqpDpbrw"
+  ),
+  isTokenAutoRefreshEnabled: true,
+});
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
@@ -52,7 +63,7 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+// testConnection();
 
 export {
   collection,

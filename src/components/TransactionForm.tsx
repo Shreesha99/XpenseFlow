@@ -14,7 +14,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { db, auth, collection, addDoc } from "../firebase";
+import { db, auth, collection, addDoc, Timestamp } from "../firebase";
 import CustomSelect from "./shared/CustomSelect";
 import BankLogo from "./ui/BankLogo";
 
@@ -102,7 +102,7 @@ export default function TransactionForm({
       const payload = {
         ...formData,
         amount: amountNum,
-        created_at: new Date().toISOString(),
+        created_at: Timestamp.now(),
         uid: auth.currentUser.uid,
       };
 
