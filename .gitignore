@@ -12,3 +12,5 @@ coverage
 !.env.example
 
 package-lock.json
+.vercel
+.env*.local
